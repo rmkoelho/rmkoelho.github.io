@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Teste de sinalização e placas</title>
+    <!-- jquery for maximum compatibility -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src='https://www.gstatic.com/charts/loader.js' type='text/javascript'></script>
+    
+    <body>
+    <style>
+        body{
+         margin:0;
+         font-family: sans-serif;
+        }
+        *{
+         box-sizing: border-box;
+        }
+        
+        .quiz-container{
+         max-width: 700px;
+         min-height:500px;
+         background-color: #ffffff;
+         margin:0px auto;
+         border-radius:10px;
+         padding:0px;
+        }
+        .quiz-container::after,.quiz-container::before{
+         content: '';
+         clear: both;
+         display: table;
+        
+        }
+        .question-number,
+        .question,
+        .options,
+        .button,
+        .answers-tracker{
+         float: left;
+         width: 100%;
+        }
+        .question-number h3{
+         color:#009688;
+         border-bottom: 1px solid #ccc;
+         margin:0;
+         padding-bottom:10px;
+        }
+        
+        .question {
+         font-size:16px;
+         padding:20px 0;
+         
+        }
+        
+        .options div{
+          background-color: #cccccc;
+          font-size:14px;
+          margin-bottom:10px;
+          border-radius:5px;
+          padding:15px;
+          position: relative;
+          overflow:hidden;
+          cursor: pointer;
+        }
+        .options div.disabled{
+         pointer-events: none;
+        }
+        .options div.correct{
+         z-index: 1;
+         color: #fff;
+        }
+        .options div.correct::before{
+         content: '';
+         position: absolute;
+         left:0;
+         top:0;
+         width: 100%;
+         height: 100%;
+         background-color: green;
+         z-index: -1;
+         
+         animation: animateBackground 1s ease;
+         animation-fill-mode: forwards;
+        }
+        @keyframes animateBackground{
+         0%{
+          transform: translateX(-100%);
+         }
+         100%{
+          transform: translateX(0%); 
+         }
+        }
+        .options div.wrong{
+         z-index: 1;
+         color: #fff;
+        }
+        .options div.wrong::before{
+         content: '';
+         position: absolute;
+         left:0;
+         top:0;
+         width: 100%;
+         height: 100%;
+         background-color:red;
+         z-index: -1;
+         
+         animation: animateBackground 1s ease;
+         animation-fill-mode: forwards;
+        }
+        @keyframes animateBackground{
+         0%{
+          transform: translateX(-100%);
+         }
+         100%{
+          transform: translateX(0%); 
+         }
+        }
+        
+        .button .btn{
+         padding:15px 50px;
+         border-radius:5px;
+         cursor: pointer;
+         background-color:#009688;
+         font-size:16px;
+         color:#ffffff;
+         border: none;
+         display: inline-block;
+         margin:15px 0 20px;
+        }
+        .answers-tracker{
+         border-top:1px solid #ccc;
+         padding-top: 15px;
+        }
+        .answers-tracker div{
+         height: 13px;
+         width: 13px;
+         background-color: #cccccc;
+         display: inline-block;
+         border-radius: 50%;
+         margin-right:5px;
+        }
+        
+        .answers-tracker div.correct{
+         background-color: green;
+        
+         background-position: center;
+         background-repeat: no-repeat;
+         background-size: 50%;
+        
+        }
+        .answers-tracker div.wrong{
+         background-color: red;
+        
+         background-position: center;
+         background-repeat: no-repeat;
+         background-size: 50%;
+        }
+        
+        .quiz-over{
+         position: fixed;
+         left:0;
+         top:0;
+         width: 100%;
+         height: 100%;
+         background-color:rgba(0,0,0,0.9);
+         z-index: 10;
+         display: none;
+         align-items: center;
+         justify-content: center;
+        }
+        .quiz-over.show{
+         display: flex;
+        }
+        .quiz-over .box{
+         background-color: #009688;
+         padding:30px;
+         border-radius:10px;
+         text-align: center;
+         flex-basis: 700px;
+         max-width:700px;
+         color:#ffffff;
+        }
+        
+        .quiz-over .box h1{
+         font-size:36px;
+         margin:0 0 20px;
+        }
+        
+        .quiz-over .box button{
+         padding:15px 50px;
+         border:none;
+         background-color:#FF9800;
+         border-radius:5px;
+         font-size:16px;
+         margin:15px 0 20px;
+         color:#ffffff;
+        }
+        
+        </style>
+             <div class="quizContainer container-fluid well well-lg"></div> 
+                <div class="text-center" id="quiz1">
+                </div>  
+         <div class="quiz-container">
+            <div class="question-number">
+               <h3>Questão <span class="question-num-value"></span> de <span class="total-question"></span></h3>
+               <h4>Para passar no teste você precisa acertar 38 de 46 questões</h4>
+            </div>
+            <div class="question">
+              
+            </div>
+            <div class="options">
+               <div class="option1" id="1" onclick="check(this)"></div>
+               <div class="option2" id="2" onclick="check(this)"></div>
+               <div class="option3" id="3" onclick="check(this)"></div>
+        
+            </div>
+            <div class="button">
+               <button class="btn" onclick="next()" type="button">Próxima</button>
+            </div>
+            <div class="answers-tracker">
+               
+            </div>
+         </div>
+         
+         <div class="quiz-over">
+           <div class="box">
+             <h1>
+              Parabéns!, Você acertou <span class="correct-answers"></span> de <span class="total-question2"></span> questões,
+              sua porcentagem é: <span class="percentage"></span>
+             </h1>
+             <button onclick="tryAgain()" type="button">Tente Novamente</button>
+           </div>
+         </div>
+        
+        <script>
+          
+          const options=document.querySelector(".options").children;
+          const answerTrackerContainer=document.querySelector(".answers-tracker");
+          const questionNumberSpan=document.querySelector(".question-num-value");
+          const totalQuestionSpan=document.querySelector(".total-question");
+          const correctAnswerSpan=document.querySelector(".correct-answers");
+          const totalQuestionSpan2=document.querySelector(".total-question2");
+          const percentage=document.querySelector(".percentage");
+          const question=document.querySelector(".question");
+          const op1=document.querySelector(".option1");
+          const op2=document.querySelector(".option2");
+          const op3=document.querySelector(".option3");
+        
+          let questionIndex;
+          let index=0;
+          let myArray=[];
+          let myArr=[];
+          let score=0;
+        
+          // questions and options and answers
+        
+        
+        const questions=[
+          {
+           q:'Um motorista à sua frente está sinalizando com a mão e o braço apontando para cima. Este motorista deseja:',
+           options:['virar à direita.','parar.','virar à esquerda.',''],
+           answer:1
+          },
+          {
+           q:'A única cura para envenenamento por monóxido de carbono é:',
+           options:['uma boa oferta de ar fresco.','algumas doses de água.','aplicação de frio.',''],
+           answer:1
+          },
+          {
+           q:'Derrapagens com rodas travadas geralmente são causadas por:',
+           options:['pressionar o acelerador e os pedais de freio ao mesmo tempo.','frear muito forte em alta velocidade.','virar a ignição para a posição de bloqueio enquanto o veículo ainda está em movimento.',''],
+           answer:2
+          },
+          {
+           q:'A 55 mph, sob boas condições, um veículo de passageiros pode parar dentro de:',
+           options:['400 pés.','200 pés.','300 pés.',''],
+           answer:3
+          },
+          {
+           q:'Dois conjuntos de linhas amarelas sólidas espaçadas dois ou mais pés indicam:',
+           options:['um estacionamento.','uma barreira.','tráfego de duas vias.',''],
+           answer:2
+          },
+          {
+           q:'Quando você deseja entrar em uma rodovia, você deve:',
+           options:['parar antes de mesclar no tráfego da rodovia.','parar e ceder ao tráfego na rodovia.','entrar na rodovia à velocidade do tráfego da rodovia ou próximo a ela.',''],
+           answer:3
+          },
+          {
+           q:'Um sinal de seta vermelha constante significa:',
+           options:['você deve se preparar para parar e dar a vez ao tráfego que se aproxima antes de virar.','você deve parar e não pode virar na direção da seta.','você deve parar e depois prosseguir quando for seguro fazer isso.',''],
+           answer:2
+          },
+          {
+           q:'Se você estiver em um cruzamento quando ouvir a sirene de um veículo de emergência, você deve:',
+           options:['continuar através do cruzamento e, em seguida, mover-se para a direita e parar.','mover-se para a direita e parar no cruzamento.','continuar através do cruzamento, então mover-se para a esquerda e parar.',''],
+           answer:1
+          },
+          {
+           q:'Se todos os assentos traseiros já estiverem ocupados por crianças menores de 7 anos, uma criança com menos de 8 anos pode:',
+           options:['viajar no banco da frente sem cinto de segurança.','viajar no banco da frente se devidamente segura em um sistema de retenção para crianças aprovado pelo governo federal.','sentar no colo de uma criança mais velha, com o cinto de segurança preso em ambos.',''],
+           answer:2
+          },
+          {
+           q:'Se o seu carro estacionado se movimentar e atingir outro veículo sem supervisão, você deve:',
+           options:['tocar a buzina para chamar a atenção.','relatar o incidente à polícia.','retirar seu carro e seguir em frente.',''],
+           answer:2
+          },
+          {
+           q:'Um sinal __________ em um caminhão significa que a carga do caminhão é potencialmente perigosa.',
+           options:['octogonal.','em forma de diamante.','retangular branco.',''],
+           answer:2
+          },
+          {
+           q:'Se todos os veículos estiverem viajando a 55 mph e precisarem fazer uma parada repentina, qual veículo levará mais tempo para parar?',
+           options:['Uma van pequena.','Um carro de passageiros.','Um caminhão.',''],
+           answer:3
+          },
+          {
+           q:'Quando você vê animais de fazenda perto da estrada, você deve:',
+           options:['tocar a buzina continuamente até que os animais atravessem a estrada.','afastar-se com segurança desses animais.','seguir as instruções da pessoa responsável pelos animais.',''],
+           answer:3
+          },
+          {
+           q:'Quais são os sintomas precoces do envenenamento por monóxido de carbono?',
+           options:['fadiga repentina.','dor de cabeça e tontura.','qualquer ou todos os itens acima.',''],
+           answer:3
+          },
+          {
+           q:'As linhas brancas quebradas no pavimento significam que:',
+           options:['não é permitida ultrapassagem.','o tráfego flui em direções opostas.','a ultrapassagem é permitida se feita com segurança.',''],
+           answer:3
+          },
+          {
+           q:'Ao se aproximar de um cruzamento com uma estrada principal, mas sem placas de pare ou ceda, você deve:',
+           options:['ceder a passagem ao tráfego e aos pedestres na estrada principal.','fazer uma curva acentuada para igualar a velocidade do tráfego na estrada principal.','acelerar para mesclar com o tráfego.',''],
+           answer:1
+          },
+          {
+           q:'Áreas especiais de, desvio, marcadas em uma estrada de duas faixas:',
+           options:['permitem que veículos façam curvas à esquerda.','permitem que veículos ultrapassem.','permitem que veículos façam retornos em U.',''],
+           answer:2
+          },
+          {
+           q:'Se o seu veículo começar a aquaplanar, você deve:',
+           options:['acionar os freios.','diminuir a velocidade gradualmente.','pressionar o pedal do acelerador.',''],
+           answer:2
+          },
+          {
+           q:'Se você estiver com problemas no veículo e precisar parar, qual é a primeira coisa que você deve fazer?',
+           options:['levante o capô para sinalizar uma emergência.','encoste na estrada e afaste-se do tráfego.','pare seu veículo sobre uma colina ou logo após uma curva para visibilidade.',''],
+           answer:2
+          },
+          {
+           q:'Você pode fazer uma curva à esquerda em um sinal vermelho:',
+           options:['apenas de uma rua de mão dupla para outra rua de mão dupla.','apenas de uma rua de mão única para outra rua de mão única.','apenas de uma rua de mão única para uma rua de mão dupla.',''],
+           answer:2
+          },
+          {
+           q:'Um sinal de trânsito com uma seta amarela piscante significa que você deve:',
+           options:['prossiga com cautela, mas não são permitidas curvas na direção da seta.','ceda a vez e depois prossiga com cautela.','pare e esteja preparado para obedecer ao próximo sinal.',''],
+           answer:2
+          },
+          {
+           q:'Um motorista envolvido em uma colisão significativa deve relatá-la ao DMV dentro de:',
+           options:['10 dias.','15 dias.','20 dias.',''],
+           answer:1
+          },
+          {
+           q:'Uma linha dupla branca sólida:',
+           options:['separa duas faixas de tráfego na mesma direção, e cruzar a linha é permitido.','separa faixas opostas, e cruzar a linha é proibido.','separa duas faixas de tráfego na mesma direção, e cruzar a linha é proibido.',''],
+           answer:3
+          },
+          {
+           q:'Qual é a primeira coisa que você deve fazer durante uma parada de fiscalização?',
+           options:['ligar a seta de virada à direita.','parar no canteiro central.','parar no acostamento à esquerda.',''],
+           answer:1
+          },
+          {
+           q:'Em uma rotatória, você deve dirigir:',
+           options:['em sentido horário.','no sentido dos veículos que se aproximam.','em sentido anti-horário.',''],
+           answer:3
+          },
+          {
+           q:'Em uma rodovia de duas faixas não dividida, o limite de velocidade máximo para veículos rebocando trailers é ______ a menos que indicado de outra forma.',
+           options:['55 mph.','65 mph.','60 mph.',''],
+           answer:1
+          },
+          {
+           q:'Se um motorista da Califórnia for parado por um policial por suspeita de dirigir sob efeito de drogas, eles podem ter que passar por um teste de ____ para determinar se estão dirigindo sob a influência de drogas.',
+           options:['agilidade.','cognitivo.','sangue.',''],
+           answer:3
+          },
+          {
+           q:'Em uma travessia de pedestres sem marcação, você deve:',
+           options:['parar e pedir aos pedestres que atravessem rapidamente.','aumentar a velocidade e atravessar antes dos pedestres.','ceder a vez aos pedestres.',''],
+           answer:3
+          },
+          {
+           q:'Uma calçada pintada de ___ é designada para pessoas com deficiência que exibem seus cartões.',
+           options:['verde.','azul.','branco.',''],
+           answer:2
+          },
+          {
+           q:'Quando dois veículos se encontram em uma estrada de montanha íngreme onde nenhum pode passar, qual veículo tem a vez?',
+           options:['ambos os veículos.','o veículo que viaja descendo.','o veículo que viaja subindo.',''],
+           answer:3
+          },
+          {
+           q:'Para evitar ficar muito próximo a um veículo, deve-se seguir a regra de:',
+           options:['quatro segundos.','dois segundos.','três segundos.',''],
+           answer:3
+          },
+          {
+           q:'Ao dirigir em neblina, você deve usar seus:',
+           options:['pisca-alertas de emergência.','faróis baixos.','faróis altos.',''],
+           answer:2
+          },
+          {
+           q:'Se você estiver pronto para virar à direita em um cruzamento e houver uma bicicleta ao seu lado à direita, quem tem a vez quando o sinal fica verde?',
+           options:['a bicicleta.','você.','quem começar a se mover primeiro.',''],
+           answer:1
+          },
+          {
+           q:'Você deve ligar seus faróis __________ depois do pôr do sol.',
+           options:['30 minutos.','20 minutos.','imediatamente.',''],
+           answer:1
+          },
+          {
+           q:'Qual das seguintes afirmações sobre marcações de faixa é verdadeira?',
+           options:['uma linha branca sólida entre faixas de tráfego significa que você deve permanecer em sua faixa, a menos que uma situação especial exija que você mude de faixa.','uma linha amarela quebrada entre faixas opostas de tráfego significa que você não pode cruzar a linha.','uma linha dupla sólida entre faixas opostas de tráfego significa que os veículos de ambos os lados podem ultrapassar.',''],
+           answer:1
+          },
+          {
+           q:'Qualquer pessoa que foge ou tenta evadir-se intencionalmente da aplicação da lei está sujeita a uma contravenção punível com:',
+           options:['uma multa máxima de até $1.000.','até 1 ano de prisão em uma cadeia do condado.','nenhuma das opções acima.',''],
+           answer:2
+          },
+          {
+           q:'Para ajudar a controlar o brilho do sol, você deve:',
+           options:['certificar-se de que sua viseira de carro funciona e está livre de qualquer coisa que restrinja o uso.','manter o interior e o exterior do para-brisa limpos; usar óculos de sol polarizados.','fazer ambas as opções acima.',''],
+           answer:3
+          },
+          {
+           q:'Você pode sair da estrada pavimentada para ultrapassar outro veículo:',
+           options:['se o acostamento for largo o suficiente para acomodar seu veículo.','se o veículo à sua frente estiver virando à esquerda.','em nenhuma circunstância.',''],
+           answer:3
+          },
+          {
+           q:'Ao se aproximar de uma passagem de nível sem dispositivo de aviso, o limite de velocidade é:',
+           options:['15 mph.','20 mph.','25 mph.',''],
+           answer:1
+          },
+          {
+           q:'Estacionamento paralelo é quando:',
+           options:['as rodas dianteiras estão viradas para a rua.','o veículo está alinhado com outros veículos estacionados.','as rodas traseiras estão encostadas na guia.',''],
+           answer:2
+          },
+          {
+           q:'Ao entrar na autoestrada, você deve estar dirigindo:',
+           options:['na mesma velocidade ou próxima da velocidade do tráfego na autoestrada.','de 5 a 10 MPH mais devagar que o tráfego na autoestrada.','no limite de velocidade indicado para o tráfego na autoestrada.',''],
+           answer:1
+          },
+          {
+           q:'Abaixe os faróis altos para os faróis baixos ao se aproximar de um veículo:',
+           options:['200 pés.','300 pés.','500 pés.',''],
+           answer:3
+          },
+          {
+           q:'Há um ônibus escolar à sua frente na sua faixa com luzes amarelas piscando. Você deve:',
+           options:['parar e prosseguir quando achar que todas as crianças saíram do ônibus.','reduzir para 25 MPH e ultrapassar com cautela.','diminuir a velocidade e se preparar para parar.',''],
+           answer:3
+          },
+          {
+           q:'A Lei Básica de Velocidade da Califórnia diz:',
+           options:['você nunca deve dirigir mais rápido que os limites de velocidade indicados.','você nunca deve dirigir mais rápido do que é seguro para as condições atuais.','o limite de velocidade máximo na Califórnia é de 70 mph em certas autoestradas.',''],
+           answer:2
+          },
+          {
+           q:'Você acabou de vender seu veículo. Você deve notificar ______ dentro de 5 dias::',
+           options:['sua seguradora.','CHP (Patrulha Rodoviária da Califórnia).','DMV (Departamento de Veículos Motorizados).',''],
+           answer:3
+          },
+          {
+           q:'Olhar para a estrada onde seu veículo estará em cerca de 10 segundos ajuda você a:',
+           options:['apreciar a paisagem.','evitar movimentos de última hora.','identificar perigos dentro do seu carro.',''],
+           answer:2
+          }
+        
+         ]
+        
+        
+          // set questions and options and question number
+          totalQuestionSpan.innerHTML=questions.length;
+          function load(){
+                questionNumberSpan.innerHTML=index+1;
+                 question.innerHTML=questions[questionIndex].q;     
+                 op1.innerHTML=questions[questionIndex].options[0];
+                 op2.innerHTML=questions[questionIndex].options[1];
+                 op3.innerHTML=questions[questionIndex].options[2];
+        
+                 index++;
+          }
+          
+          function check(element){
+           if(element.id==questions[questionIndex].answer){
+            element.classList.add("correct");
+            updateAnswerTracker("correct")
+            score++;
+            console.log("score:"+score)
+           }
+           else{
+            element.classList.add("wrong");
+            updateAnswerTracker("wrong")
+        
+           }
+           disabledOptions()
+          }
+           
+          function disabledOptions(){
+             for(let i=0; i<options.length; i++) {
+              options[i].classList.add("disabled");
+              if(options[i].id==questions[questionIndex].answer){
+               options[i].classList.add("correct");
+              }
+        
+             }
+          }
+          
+          function enableOptions(){
+             for(let i=0; i<options.length; i++) {
+              options[i].classList.remove("disabled","correct","wrong");
+             }
+          }
+        
+          function validate(){
+              if(!options[0].classList.contains("disabled")){
+                alert("Por favor selecione uma alternativa")
+              }
+              else{
+               enableOptions();
+               randomQuestion();
+              }
+          }
+        
+          function next(){
+            validate();
+          }
+           
+          function randomQuestion(){
+           let randomNumber=Math.floor(Math.random()*questions.length);
+           let hitDuplicate=0;
+               if(index==questions.length){
+                quizOver();
+               }
+               else{
+                 if(myArray.length>0){
+                     for(let i=0; i<myArray.length; i++){
+                       if(myArray[i]==randomNumber){
+                          hitDuplicate=1;
+                          break;
+                       }
+                     }
+                     if(hitDuplicate==1){
+                      randomQuestion();
+                     }
+                     else{
+                       questionIndex=randomNumber;   
+                      load();
+                      myArr.push(questionIndex);
+                     }
+                 }
+                 if(myArray.length==0){
+                   questionIndex=randomNumber;   
+                   load();
+                   myArr.push(questionIndex);
+                 }
+        
+               myArray.push(randomNumber);
+               
+              }
+          }
+              
+          function answerTrakcer(){
+             for(let i=0; i<questions.length; i++){
+              const div=document.createElement("div")
+                 answerTrackerContainer.appendChild(div);
+             }
+          }
+        
+         function updateAnswerTracker(classNam){
+           answerTrackerContainer.children[index-1].classList.add(classNam);
+         }
+        
+         function quizOver(){
+            document.querySelector(".quiz-over").classList.add("show");
+            correctAnswerSpan.innerHTML=score;
+            totalQuestionSpan2.innerHTML=questions.length;
+            percentage.innerHTML=(score/questions.length)*100 + "%";
+         }
+         
+         function tryAgain(){
+             window.location.reload();
+         }
+        
+         window.onload=function(){
+          randomQuestion();
+          answerTrakcer();
+         
+        }
+        
+        </script>
+
+</body>
+
+</html>
