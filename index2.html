@@ -6,7 +6,608 @@
     <!-- jquery for maximum compatibility -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   
+  <style>
+body{
+ margin:0;
+ font-family: sans-serif;
+}
+*{
+ box-sizing: border-box;
+}
+
+.quiz-container{
+ max-width: 700px;
+ min-height:500px;
+ background-color: #ffffff;
+ margin:0px auto;
+ border-radius:10px;
+ padding:0px;
+}
+.quiz-container::after,.quiz-container::before{
+ content: '';
+ clear: both;
+ display: table;
+
+}
+.question-number,
+.question,
+.options,
+.button,
+.answers-tracker{
+ float: left;
+ width: 100%;
+}
+.question-number h3{
+ color:#009688;
+ border-bottom: 1px solid #ccc;
+ margin:0;
+ padding-bottom:10px;
+}
+
+.question {
+ font-size:16px;
+ padding:20px 0;
+ 
+}
+
+.options div{
+  background-color: #cccccc;
+  font-size:14px;
+  margin-bottom:10px;
+  border-radius:5px;
+  padding:15px;
+  position: relative;
+  overflow:hidden;
+  cursor: pointer;
+}
+.options div.disabled{
+ pointer-events: none;
+}
+.options div.correct{
+ z-index: 1;
+ color: #fff;
+}
+.options div.correct::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color: green;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+.options div.wrong{
+ z-index: 1;
+ color: #fff;
+}
+.options div.wrong::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:red;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+
+.button .btn{
+ padding:15px 50px;
+ border-radius:5px;
+ cursor: pointer;
+ background-color:#009688;
+ font-size:16px;
+ color:#ffffff;
+ border: none;
+ display: inline-block;
+ margin:15px 0 20px;
+}
+.answers-tracker{
+ border-top:1px solid #ccc;
+ padding-top: 15px;
+}
+.answers-tracker div{
+ height: 13px;
+ width: 13px;
+ background-color: #cccccc;
+ display: inline-block;
+ border-radius: 50%;
+ margin-right:5px;
+}
+
+.answers-tracker div.correct{
+ background-color: green;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+
+}
+.answers-tracker div.wrong{
+ background-color: red;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+}
+
+.quiz-over{
+ position: fixed;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:rgba(0,0,0,0.9);
+ z-index: 10;
+ display: none;
+ align-items: center;
+ justify-content: center;
+}
+.quiz-over.show{
+ display: flex;
+}
+.quiz-over .box{
+ background-color: #009688;
+ padding:30px;
+ border-radius:10px;
+ text-align: center;
+ flex-basis: 700px;
+ max-width:700px;
+ color:#ffffff;
+}
+
+.quiz-over .box h1{
+ font-size:36px;
+ margin:0 0 20px;
+}
+
+.quiz-over .box button{
+ padding:15px 50px;
+ border:none;
+ background-color:#FF9800;
+ border-radius:5px;
+ font-size:16px;
+ margin:15px 0 20px;
+ color:#ffffff;
+}
+
+</style>
+     <div class="quizContainer container-fluid well well-lg"></div> 
+        <div class="text-center" id="quiz1">
+        </div>  
+ <div class="quiz-container">
+    <div class="question-number">
+       <h3>Questão <span class="question-num-value"></span> de <span class="total-question"></span></h3>
+       <h4>Para passar no teste você precisa acertar 38 de 46 questões</h4>
+    </div>
+    <div class="question">
+      
+    </div>
+    <div class="options">
+       <div class="option1" id="1" onclick="check(this)"></div>
+       <div class="option2" id="2" onclick="check(this)"></div>
+       <div class="option3" id="3" onclick="check(this)"></div>
+
+    </div>
+    <div class="button">
+       <button class="btn" onclick="next()" type="button">Próxima</button>
+    </div>
+    <div class="answers-tracker">
+       
+    </div>
+ </div>
+ 
+ <div class="quiz-over">
+   <div class="box">
+     <h1>
+      Parabéns!, Você acertou <span class="correct-answers"></span> de <span class="total-question2"></span> questões,
+      sua porcentagem é: <span class="percentage"></span>
+     </h1>
+     <button onclick="tryAgain()" type="button">Tente Novamente</button>
+   </div>
+ </div>
+
+<script>
   
+  const options=document.querySelector(".options").children;
+  const answerTrackerContainer=document.querySelector(".answers-tracker");
+  const questionNumberSpan=document.querySelector(".question-num-value");
+  const totalQuestionSpan=document.querySelector(".total-question");
+  const correctAnswerSpan=document.querySelector(".correct-answers");
+  const totalQuestionSpan2=document.querySelector(".total-question2");
+  const percentage=document.querySelector(".percentage");
+  const question=document.querySelector(".question");
+  const op1=document.querySelector(".option1");
+  const op2=document.querySelector(".option2");
+  const op3=document.querySelector(".option3");
+
+  let questionIndex;
+  let index=0;
+  let myArray=[];
+  let myArr=[];
+  let score=0;
+
+  // questions and options and answers
+
+
+const questions=[
+  {
+   q:'Grandes painéis de setas eletrônicas piscantes podem ser usados em zonas de trabalho, dia e noite, para:',
+   options:['guiar os motoristas até certas zonas de estacionamento.','guiar os motoristas até certas faixas de tráfego.','desviar os motoristas para zonas de trabalho.',''],
+   answer:2
+  },
+  {
+   q:'Na Califórnia, o limite de velocidade para uma interseção sem visibilidade é:',
+   options:['25 mph.','20 mph.','15 mph.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes afirmações sobre o uso de faróis é FALSA?',
+   options:['faróis baixos são usados na condução na cidade e no tráfego em rodovias.','faróis baixos são usados ao viajar em neblina, chuva ou neve.','faróis altos são usados ao viajar atrás de outros veículos.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes afirmações sobre ultrapassagem de outros veículos é verdadeira?',
+   options:['não ultrapasse a menos que saiba que terá espaço suficiente para retornar à sua faixa.','sinalize sempre antes de ultrapassar.','ambas as opções são verdadeiras.',''],
+   answer:3
+  },
+  {
+   q:'Todos os dispositivos regulamentares na estrada indicam:',
+   options:['parar, seguir em uma determinada direção ou limitar sua velocidade.','sobre condições perigosas ou a possibilidade de condições perigosas.','como encontrar seu caminho com segurança ou fornecer informações para tornar sua viagem mais confortável.',''],
+   answer:1
+  },
+  {
+   q:'Em uma interseção, você deve dar a vez a outro veículo:',
+   options:['se o veículo estiver começando a entrar na interseção.','se o veículo estiver à sua direita e chegou ao mesmo tempo que você.','em ambas as situações acima.',''],
+   answer:3
+  },
+  {
+   q:'Faixas de tráfego em direções opostas são divididas por:',
+   options:['linhas brancas.','linhas pretas.','linhas amarelas.',''],
+   answer:3
+  },
+  {
+   q:'Ao virar à esquerda de uma rua de sentido único para outra rua de sentido único, você deve virar para:',
+   options:['a faixa mais à direita.','a faixa mais à esquerda.','qualquer faixa segura.',''],
+   answer:3
+  },
+  {
+   q:'Se um carro se aproximar com seus faróis altos acesos, você deve __________ para evitar ser temporariamente cegado.',
+   options:['olhar para o centro da estrada.','olhar para a borda direita da estrada.','olhar para a borda esquerda da estrada.',''],
+   answer:2
+  },
+  {
+   q:'Seguir muito de perto outro veículo é chamado de:',
+   options:['direção agressiva.','andar muito próximo.','direção defensiva.',''],
+   answer:2
+  },
+  {
+   q:'Ao sair de uma rodovia de alta velocidade com duas faixas, _______ se tiver tráfego seguindo você.',
+   options:['tente aumentar a velocidade do seu veículo.','tente reduzir rapidamente a velocidade do seu veículo.','tente não reduzir rapidamente a velocidade do seu veículo.',''],
+   answer:3
+  },
+  {
+   q:'O que você deve fazer se outro motorista estiver seguindo muito de perto o seu veículo?',
+   options:['mude de faixa para permitir que o motorista siga.','não permita que o motorista o ultrapasse.','aumente a velocidade para se afastar do motorista.',''],
+   answer:1
+  },
+  {
+   q:'Quando você estaciona e deixa seu veículo em uma rodovia ou rua, você NÃO deve:',
+   options:['abrir as janelas.','acionar o freio de estacionamento.','desligar o motor.',''],
+   answer:1
+  },
+  {
+   q:'Se você planeja virar após uma interseção, você deve:',
+   options:['sinalizar logo antes de fazer a curva.','começar a sinalizar quando estiver na interseção.','sinalizar antes de passar pela interseção.',''],
+   answer:2
+  },
+  {
+   q:'Antes de fazer marcha à ré com seu veículo, você deve olhar para a frente, para os lados e para trás, e continuar olhando _________ enquanto faz a marcha à ré.',
+   options:['nos espelhos laterais.','para trás.','para frente.',''],
+   answer:2
+  },
+  {
+   q:'É inseguro ultrapassar quando:',
+   options:['as marcações na pista são linhas amarelas interrompidas.','o veículo à frente está viajando mais devagar do que a velocidade segura.','você está passando por uma interseção.',''],
+   answer:3
+  },
+  {
+   q:'Pedestres cegos podem carregar bengalas __________ ou usar cães-guia.',
+   options:['brancas.','vermelhas.','pretas.',''],
+   answer:1
+  },
+  {
+   q:'Ao estacionar em uma estrada pública, você deve estacionar paralelo e a uma distância de ____ polegadas da guia ou borda da estrada.',
+   options:['21.','18.','20.',''],
+   answer:2
+  },
+  {
+   q:'Qual é a primeira regra de uma curva segura e legal?',
+   options:['mude para a faixa apropriada bem antes da curva.','aumente a velocidade.','reduza a velocidade.',''],
+   answer:1
+  },
+  {
+   q:'Você deve usar os faróis altos em todas as seguintes situações, exceto:',
+   options:['em neblina, neve ou chuva intensa.','em áreas de construção.','em estradas desconhecidas à noite ou em ruas escuras da cidade.',''],
+   answer:1
+  },
+  {
+   q:'_________ são os lugares mais prováveis para ocorrerem colisões entre carros e motocicletas.',
+   options:['Rodovias expressas.','Rotatórias.','Interseções.',''],
+   answer:3
+  },
+  {
+   q:'Em uma rodovia com três ou mais faixas em uma direção, veículos ultrapassando outros ou virando à esquerda devem usar:',
+   options:['a faixa da esquerda.','a faixa da direita.','a faixa do meio.',''],
+   answer:1
+  },
+  {
+   q:'Antes de atingir o topo de uma colina ou entrar em uma curva, você deve _________ e observar os veículos que se aproximam.',
+   options:['diminuir a velocidade, mover para o lado direito da estrada.','aumentar a velocidade, ligar os faróis.','diminuir a velocidade, mover para o lado esquerdo da estrada.',''],
+   answer:1
+  },
+  {
+   q:'Quando você deve ligar os faróis altos?',
+   options:['a noite toda.','à noite, quando chove.','ao dirigir em área aberta à noite ou em ruas escuras da cidade.',''],
+   answer:3
+  },
+  {
+   q:'Ao virar à esquerda de uma rua de sentido único para outra rua de sentido único, inicie sua curva a partir de:',
+   options:['a faixa mais à esquerda.','a faixa mais à direita.','qualquer faixa.',''],
+   answer:1
+  },
+  {
+   q:'Se você se aproximar de uma placa de pare estável, você deve:',
+   options:['parar na linha de limite branca sólida.','parar na linha de limite amarela interrompida.','parar na linha de limite branca interrompida.',''],
+   answer:1
+  },
+  {
+   q:'Faixas de Veículos de Alta Ocupação (FAV) são reservadas para:',
+   options:['caronas e veículos com mais de uma pessoa.','veículos agrícolas e caminhões.','caminhões com menos de três pessoas.',''],
+   answer:1
+  },
+  {
+   q:'Seu veículo quebra em uma rodovia. Você não consegue mover o veículo completamente para fora da estrada, pois o acostamento é muito estreito. Qual é a melhor coisa a fazer?',
+   options:['saia pelo lado direito do seu veículo e vá para um local seguro.','fique dentro do seu veículo com o cinto de segurança até a chegada de ajuda.','saia do veículo imediatamente e acene para os motoristas saberem que você está bloqueando a faixa.',''],
+   answer:1
+  },
+  {
+   q:'O que você deve fazer se estiver ultrapassando uma bicicleta e um veículo que se aproxima ao mesmo tempo?',
+   options:['reduza a velocidade e deixe o veículo que se aproxima passar primeiro para deixar espaço extra para a bicicleta.','deixe um pouco de espaço para o veículo que se aproxima ao ultrapassar a bicicleta.','ultrapasse a bicicleta primeiro para deixar espaço extra para o veículo que se aproxima.',''],
+   answer:1
+  },
+  {
+   q:'Você está dirigindo na rodovia e nota outro motorista usando um celular. Qual é a melhor coisa a fazer?',
+   options:['aumentar a distância de seguimento.','buzinar e acenar para o motorista desligar o telefone.','alertar imediatamente a polícia.',''],
+   answer:1
+  },
+  {
+   q:'Se um pneu furar repentinamente enquanto você está dirigindo, você deve:',
+   options:['mover-se para o lado esquerdo da estrada.','segurar firmemente o volante e manter o veículo reto.','aumentar a velocidade.',''],
+   answer:2
+  },
+  {
+   q:'Você está dirigindo lentamente em uma estrada de duas faixas. Se houver pelo menos ____ veículos atrás de você que não conseguem ultrapassar, você deve puxar para o lado e permitir que eles ultrapassem.',
+   options:['4.','3.','5.',''],
+   answer:3
+  },
+  {
+   q:'_________ ocorre em estradas molhadas quando seus pneus dianteiros começam a deslizar na água em vez de na estrada.',
+   options:['Aquaplanagem.','Seguir muito de perto.','Ziguezaguear.',''],
+   answer:1
+  },
+  {
+   q:'Você pode ultrapassar um veículo leve parado pelo lado esquerdo:',
+   options:['se os trilhos estiverem tão próximos do lado direito que você não pode ultrapassar pela direita.','em ruas de sentido único.','em ambas as situações acima.',''],
+   answer:3
+  },
+  {
+   q:'Se você se aproxima de um semáforo amarelo constante, você deve:',
+   options:['parar, procurar pedestres e seguir com cautela.','reduzir a velocidade e seguir com cautela, se não puder parar com segurança.','parar e esperar o sinal vermelho.',''],
+   answer:2
+  },
+  {
+   q:'Ao virar à direita em uma rua de duas mãos, comece na faixa da direita e entre em:',
+   options:['qualquer faixa disponível.','a faixa mais à esquerda.','a faixa mais próxima da borda direita da estrada.',''],
+   answer:3
+  },
+  {
+   q:'Um sinal triangular laranja na traseira de um veículo indica que:',
+   options:['o veículo não pode viajar a mais de 45 mph.','o veículo não pode viajar a mais de 25 mph.','o veículo pode viajar a mais de 25 mph.',''],
+   answer:2
+  },
+  {
+   q:'Se você ver duas linhas amarelas sólidas em uma estrada, isso significa que:',
+   options:['não é permitida ultrapassagem.','a ultrapassagem é permitida a qualquer momento.','a ultrapassagem é permitida durante o dia.',''],
+   answer:1
+  },
+  {
+   q:'Veículos se aproximando de uma rotatória devem:',
+   options:['entrar na rotatória à esquerda da ilha central.','parar completamente e aguardar o tráfego na rotatória limpar.','ceder a passagem ao tráfego na rotatória.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes regras de prioridade de passagem é FALSA?',
+   options:['em todos os momentos, os motoristas devem ceder a passagem a pedestres em uma faixa de pedestres marcada ou não marcada.','você deve obedecer aos sinais dados por um policial de trânsito, mesmo que os sinais do policial contradigam os sinais de trânsito.','em uma interseção onde não há sinal de pare, placa de ceda ou sinal de trânsito, os motoristas devem ceder a passagem aos veículos que vêm da esquerda.',''],
+   answer:3
+  },
+  {
+   q:'Qual destes não é um pedestre:',
+   options:['ciclista.','pessoa com deficiência usando cadeira de rodas.','pessoa cega com uma bengala.',''],
+   answer:1
+  },
+  {
+   q:'Qual das seguintes afirmações sobre pontos cegos é verdadeira?',
+   options:['Eles são eliminados se você tiver um espelho externo em cada lado do veículo.','Caminhões grandes têm pontos cegos maiores do que a maioria dos veículos de passageiros.','Pontos cegos podem ser verificados olhando nos seus retrovisores.',''],
+   answer:2
+  },
+  {
+   q:'Qual destes é considerado uma causa comum de colisão:',
+   options:['velocidade insegura.','não seguir placas de pare, sinais e sinalizações.','todas as anteriores.',''],
+   answer:3
+  },
+  {
+   q:'Uma pessoa condenada por condução imprudente ou participação em uma corrida de velocidade que cause lesões a outra pessoa está sujeita a:',
+   options:['prisão e/ou multa.','serviço comunitário.','todas as opções acima.',''],
+   answer:1
+  },
+  {
+   q:'Você pode legalmente bloquear um cruzamento:',
+   options:['quando você entrou no cruzamento com o sinal verde.','durante o tráfego na hora do rush.','em nenhuma circunstância.',''],
+   answer:3
+  },
+  {
+   q:'Com uma carteira de motorista Classe C, uma pessoa pode dirigir um:',
+   options:['trem leve.','carro, van ou caminhonete.','caminhão semirreboque.',''],
+   answer:2
+  }
+
+ ]
+
+
+  // set questions and options and question number
+  totalQuestionSpan.innerHTML=questions.length;
+  function load(){
+        questionNumberSpan.innerHTML=index+1;
+         question.innerHTML=questions[questionIndex].q;     
+         op1.innerHTML=questions[questionIndex].options[0];
+         op2.innerHTML=questions[questionIndex].options[1];
+         op3.innerHTML=questions[questionIndex].options[2];
+
+         index++;
+  }
+  
+  function check(element){
+   if(element.id==questions[questionIndex].answer){
+    element.classList.add("correct");
+    updateAnswerTracker("correct")
+    score++;
+    console.log("score:"+score)
+   }
+   else{
+    element.classList.add("wrong");
+    updateAnswerTracker("wrong")
+
+   }
+   disabledOptions()
+  }
+   
+  function disabledOptions(){
+     for(let i=0; i<options.length; i++) {
+      options[i].classList.add("disabled");
+      if(options[i].id==questions[questionIndex].answer){
+       options[i].classList.add("correct");
+      }
+
+     }
+  }
+  
+  function enableOptions(){
+     for(let i=0; i<options.length; i++) {
+      options[i].classList.remove("disabled","correct","wrong");
+     }
+  }
+
+  function validate(){
+      if(!options[0].classList.contains("disabled")){
+        alert("Por favor selecione uma alternativa")
+      }
+      else{
+       enableOptions();
+       randomQuestion();
+      }
+  }
+
+  function next(){
+    validate();
+  }
+   
+  function randomQuestion(){
+   let randomNumber=Math.floor(Math.random()*questions.length);
+   let hitDuplicate=0;
+       if(index==questions.length){
+        quizOver();
+       }
+       else{
+         if(myArray.length>0){
+             for(let i=0; i<myArray.length; i++){
+               if(myArray[i]==randomNumber){
+                  hitDuplicate=1;
+                  break;
+               }
+             }
+             if(hitDuplicate==1){
+              randomQuestion();
+             }
+             else{
+               questionIndex=randomNumber;   
+              load();
+              myArr.push(questionIndex);
+             }
+         }
+         if(myArray.length==0){
+           questionIndex=randomNumber;   
+           load();
+           myArr.push(questionIndex);
+         }
+
+       myArray.push(randomNumber);
+       
+      }
+  }
+      
+  function answerTrakcer(){
+     for(let i=0; i<questions.length; i++){
+      const div=document.createElement("div")
+         answerTrackerContainer.appendChild(div);
+     }
+  }
+
+ function updateAnswerTracker(classNam){
+   answerTrackerContainer.children[index-1].classList.add(classNam);
+ }
+
+ function quizOver(){
+    document.querySelector(".quiz-over").classList.add("show");
+    correctAnswerSpan.innerHTML=score;
+    totalQuestionSpan2.innerHTML=questions.length;
+    percentage.innerHTML=(score/questions.length)*100 + "%";
+ }
+ 
+ function tryAgain(){
+     window.location.reload();
+ }
+
+ window.onload=function(){
+  randomQuestion();
+  answerTrakcer();
+ 
+}
+
+</script>
   
 <style>
 body{
