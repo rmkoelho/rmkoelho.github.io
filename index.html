@@ -5,7 +5,208 @@
     <title>Teste de sinalização e placas</title>
     <!-- jquery for maximum compatibility -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
+  
+  
+  
+<style>
+body{
+ margin:0;
+ font-family: sans-serif;
+}
+*{
+ box-sizing: border-box;
+}
+
+.quiz-container{
+ max-width: 700px;
+ min-height:500px;
+ background-color: #ffffff;
+ margin:0px auto;
+ border-radius:10px;
+ padding:0px;
+}
+.quiz-container::after,.quiz-container::before{
+ content: '';
+ clear: both;
+ display: table;
+
+}
+.question-number,
+.question,
+.options,
+.button,
+.answers-tracker{
+ float: left;
+ width: 100%;
+}
+.question-number h3{
+ color:#009688;
+ border-bottom: 1px solid #ccc;
+ margin:0;
+ padding-bottom:10px;
+}
+
+.question {
+ font-size:16px;
+ padding:20px 0;
+ 
+}
+
+.options div{
+  background-color: #cccccc;
+  font-size:14px;
+  margin-bottom:10px;
+  border-radius:5px;
+  padding:15px;
+  position: relative;
+  overflow:hidden;
+  cursor: pointer;
+}
+.options div.disabled{
+ pointer-events: none;
+}
+.options div.correct{
+ z-index: 1;
+ color: #fff;
+}
+.options div.correct::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color: green;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+.options div.wrong{
+ z-index: 1;
+ color: #fff;
+}
+.options div.wrong::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:red;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+
+.button .btn{
+ padding:15px 50px;
+ border-radius:5px;
+ cursor: pointer;
+ background-color:#009688;
+ font-size:16px;
+ color:#ffffff;
+ border: none;
+ display: inline-block;
+ margin:15px 0 20px;
+}
+.answers-tracker{
+ border-top:1px solid #ccc;
+ padding-top: 15px;
+}
+.answers-tracker div{
+ height: 13px;
+ width: 13px;
+ background-color: #cccccc;
+ display: inline-block;
+ border-radius: 50%;
+ margin-right:5px;
+}
+
+.answers-tracker div.correct{
+ background-color: green;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+
+}
+.answers-tracker div.wrong{
+ background-color: red;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+}
+
+.quiz-over{
+ position: fixed;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:rgba(0,0,0,0.9);
+ z-index: 10;
+ display: none;
+ align-items: center;
+ justify-content: center;
+}
+.quiz-over.show{
+ display: flex;
+}
+.quiz-over .box{
+ background-color: #009688;
+ padding:30px;
+ border-radius:10px;
+ text-align: center;
+ flex-basis: 700px;
+ max-width:700px;
+ color:#ffffff;
+}
+
+.quiz-over .box h1{
+ font-size:36px;
+ margin:0 0 20px;
+}
+
+.quiz-over .box button{
+ padding:15px 50px;
+ border:none;
+ background-color:#FF9800;
+ border-radius:5px;
+ font-size:16px;
+ margin:15px 0 20px;
+ color:#ffffff;
+}
+
+</style>
+     <div class="quizContainer container-fluid well well-lg"></div> 
+        <div class="text-center" id="quiz1">
+        </div>  
+ <div class="quiz-container">
+    <div class="question-number">
+       <h3>Questão <span class="question-num-value"></span> de <span class="total-question"></span></h3>
+       <h4>Para passar no teste você precisa acertar 38 de 46 questões</h4>
+    </div>
+    <div class="question">
+       <script>
     /** Simple JavaScript Quiz
      * version 0.1.0
      * http://journalism.berkeley.edu
@@ -516,4 +717,27 @@
 
   gtag('config', 'G-89257DZKKV');
 </script>
-</html>
+    </div>
+    <div class="options">
+       <div class="option1" id="1" onclick="check(this)"></div>
+       <div class="option2" id="2" onclick="check(this)"></div>
+       <div class="option3" id="3" onclick="check(this)"></div>
+
+    </div>
+    <div class="button">
+       <button class="btn" onclick="next()" type="button">Próxima</button>
+    </div>
+    <div class="answers-tracker">
+       
+    </div>
+ </div>
+ 
+ <div class="quiz-over">
+   <div class="box">
+     <h1>
+      Parabéns!, Você acertou <span class="correct-answers"></span> de <span class="total-question2"></span> questões,
+      sua porcentagem é: <span class="percentage"></span>
+     </h1>
+     <button onclick="tryAgain()" type="button">Tente Novamente</button>
+   </div>
+ </div>
