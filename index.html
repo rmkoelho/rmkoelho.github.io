@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Teste de sinalização e placas</title>
+    <!-- jquery for maximum compatibility -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src='https://www.gstatic.com/charts/loader.js' type='text/javascript'></script>
+  
+  <style>
+body{
+ margin:0;
+ font-family: sans-serif;
+}
+*{
+ box-sizing: border-box;
+}
+
+.quiz-container{
+ max-width: 700px;
+ min-height:500px;
+ background-color: #ffffff;
+ margin:0px auto;
+ border-radius:10px;
+ padding:0px;
+}
+.quiz-container::after,.quiz-container::before{
+ content: '';
+ clear: both;
+ display: table;
+
+}
+.question-number,
+.question,
+.options,
+.button,
+.answers-tracker{
+ float: left;
+ width: 100%;
+}
+.question-number h3{
+ color:#009688;
+ border-bottom: 1px solid #ccc;
+ margin:0;
+ padding-bottom:10px;
+}
+
+.question {
+ font-size:16px;
+ padding:20px 0;
+ 
+}
+
+.options div{
+  background-color: #cccccc;
+  font-size:14px;
+  margin-bottom:10px;
+  border-radius:5px;
+  padding:15px;
+  position: relative;
+  overflow:hidden;
+  cursor: pointer;
+}
+.options div.disabled{
+ pointer-events: none;
+}
+.options div.correct{
+ z-index: 1;
+ color: #fff;
+}
+.options div.correct::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color: green;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+.options div.wrong{
+ z-index: 1;
+ color: #fff;
+}
+.options div.wrong::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:red;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+
+.button .btn{
+ padding:15px 50px;
+ border-radius:5px;
+ cursor: pointer;
+ background-color:#009688;
+ font-size:16px;
+ color:#ffffff;
+ border: none;
+ display: inline-block;
+ margin:15px 0 20px;
+}
+.answers-tracker{
+ border-top:1px solid #ccc;
+ padding-top: 15px;
+}
+.answers-tracker div{
+ height: 13px;
+ width: 13px;
+ background-color: #cccccc;
+ display: inline-block;
+ border-radius: 50%;
+ margin-right:5px;
+}
+
+.answers-tracker div.correct{
+ background-color: green;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+
+}
+.answers-tracker div.wrong{
+ background-color: red;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+}
+
+.quiz-over{
+ position: fixed;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:rgba(0,0,0,0.9);
+ z-index: 10;
+ display: none;
+ align-items: center;
+ justify-content: center;
+}
+.quiz-over.show{
+ display: flex;
+}
+.quiz-over .box{
+ background-color: #009688;
+ padding:30px;
+ border-radius:10px;
+ text-align: center;
+ flex-basis: 700px;
+ max-width:700px;
+ color:#ffffff;
+}
+
+.quiz-over .box h1{
+ font-size:36px;
+ margin:0 0 20px;
+}
+
+.quiz-over .box button{
+ padding:15px 50px;
+ border:none;
+ background-color:#FF9800;
+ border-radius:5px;
+ font-size:16px;
+ margin:15px 0 20px;
+ color:#ffffff;
+}
+
+</style>
+     <div class="quizContainer container-fluid well well-lg"></div> 
+        <div class="text-center" id="quiz1">
+        </div>  
+ <div class="quiz-container">
+    <div class="question-number">
+       <h3>Questão <span class="question-num-value"></span> de <span class="total-question"></span></h3>
+       <h4>Para passar no teste você precisa acertar 38 de 46 questões</h4>
+    </div>
+    <div class="question">
+      
+    </div>
+    <div class="options">
+       <div class="option1" id="1" onclick="check(this)"></div>
+       <div class="option2" id="2" onclick="check(this)"></div>
+       <div class="option3" id="3" onclick="check(this)"></div>
+
+    </div>
+    <div class="button">
+       <button class="btn" onclick="next()" type="button">Próxima</button>
+    </div>
+    <div class="answers-tracker">
+       
+    </div>
+ </div>
+ 
+ <div class="quiz-over">
+   <div class="box">
+     <h1>
+      Parabéns!, Você acertou <span class="correct-answers"></span> de <span class="total-question2"></span> questões,
+      sua porcentagem é: <span class="percentage"></span>
+     </h1>
+     <button onclick="tryAgain()" type="button">Tente Novamente</button>
+   </div>
+ </div>
+
+<script>
+  
+  const options=document.querySelector(".options").children;
+  const answerTrackerContainer=document.querySelector(".answers-tracker");
+  const questionNumberSpan=document.querySelector(".question-num-value");
+  const totalQuestionSpan=document.querySelector(".total-question");
+  const correctAnswerSpan=document.querySelector(".correct-answers");
+  const totalQuestionSpan2=document.querySelector(".total-question2");
+  const percentage=document.querySelector(".percentage");
+  const question=document.querySelector(".question");
+  const op1=document.querySelector(".option1");
+  const op2=document.querySelector(".option2");
+  const op3=document.querySelector(".option3");
+
+  let questionIndex;
+  let index=0;
+  let myArray=[];
+  let myArr=[];
+  let score=0;
+
+  // questions and options and answers
+
+
+const questions=[
+  {
+   q:'Grandes painéis de setas eletrônicas piscantes podem ser usados em zonas de trabalho, dia e noite, para:',
+   options:['guiar os motoristas até certas zonas de estacionamento.','guiar os motoristas até certas faixas de tráfego.','desviar os motoristas para zonas de trabalho.',''],
+   answer:2
+  },
+  {
+   q:'Na Califórnia, o limite de velocidade para uma interseção sem visibilidade é:',
+   options:['25 mph.','20 mph.','15 mph.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes afirmações sobre o uso de faróis é FALSA?',
+   options:['faróis baixos são usados na condução na cidade e no tráfego em rodovias.','faróis baixos são usados ao viajar em neblina, chuva ou neve.','faróis altos são usados ao viajar atrás de outros veículos.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes afirmações sobre ultrapassagem de outros veículos é verdadeira?',
+   options:['não ultrapasse a menos que saiba que terá espaço suficiente para retornar à sua faixa.','sinalize sempre antes de ultrapassar.','ambas as opções são verdadeiras.',''],
+   answer:3
+  },
+  {
+   q:'Todos os dispositivos regulamentares na estrada indicam:',
+   options:['parar, seguir em uma determinada direção ou limitar sua velocidade.','sobre condições perigosas ou a possibilidade de condições perigosas.','como encontrar seu caminho com segurança ou fornecer informações para tornar sua viagem mais confortável.',''],
+   answer:1
+  },
+  {
+   q:'Em uma interseção, você deve dar a vez a outro veículo:',
+   options:['se o veículo estiver começando a entrar na interseção.','se o veículo estiver à sua direita e chegou ao mesmo tempo que você.','em ambas as situações acima.',''],
+   answer:3
+  },
+  {
+   q:'Faixas de tráfego em direções opostas são divididas por:',
+   options:['linhas brancas.','linhas pretas.','linhas amarelas.',''],
+   answer:3
+  },
+  {
+   q:'Ao virar à esquerda de uma rua de sentido único para outra rua de sentido único, você deve virar para:',
+   options:['a faixa mais à direita.','a faixa mais à esquerda.','qualquer faixa segura.',''],
+   answer:3
+  },
+  {
+   q:'Se um carro se aproximar com seus faróis altos acesos, você deve __________ para evitar ser temporariamente cegado.',
+   options:['olhar para o centro da estrada.','olhar para a borda direita da estrada.','olhar para a borda esquerda da estrada.',''],
+   answer:2
+  },
+  {
+   q:'Seguir muito de perto outro veículo é chamado de:',
+   options:['direção agressiva.','andar muito próximo.','direção defensiva.',''],
+   answer:2
+  },
+  {
+   q:'Ao sair de uma rodovia de alta velocidade com duas faixas, _______ se tiver tráfego seguindo você.',
+   options:['tente aumentar a velocidade do seu veículo.','tente reduzir rapidamente a velocidade do seu veículo.','tente não reduzir rapidamente a velocidade do seu veículo.',''],
+   answer:3
+  },
+  {
+   q:'O que você deve fazer se outro motorista estiver seguindo muito de perto o seu veículo?',
+   options:['mude de faixa para permitir que o motorista siga.','não permita que o motorista o ultrapasse.','aumente a velocidade para se afastar do motorista.',''],
+   answer:1
+  },
+  {
+   q:'Quando você estaciona e deixa seu veículo em uma rodovia ou rua, você NÃO deve:',
+   options:['abrir as janelas.','acionar o freio de estacionamento.','desligar o motor.',''],
+   answer:1
+  },
+  {
+   q:'Se você planeja virar após uma interseção, você deve:',
+   options:['sinalizar logo antes de fazer a curva.','começar a sinalizar quando estiver na interseção.','sinalizar antes de passar pela interseção.',''],
+   answer:2
+  },
+  {
+   q:'Antes de fazer marcha à ré com seu veículo, você deve olhar para a frente, para os lados e para trás, e continuar olhando _________ enquanto faz a marcha à ré.',
+   options:['nos espelhos laterais.','para trás.','para frente.',''],
+   answer:2
+  },
+  {
+   q:'É inseguro ultrapassar quando:',
+   options:['as marcações na pista são linhas amarelas interrompidas.','o veículo à frente está viajando mais devagar do que a velocidade segura.','você está passando por uma interseção.',''],
+   answer:3
+  },
+  {
+   q:'Pedestres cegos podem carregar bengalas __________ ou usar cães-guia.',
+   options:['brancas.','vermelhas.','pretas.',''],
+   answer:1
+  },
+  {
+   q:'Ao estacionar em uma estrada pública, você deve estacionar paralelo e a uma distância de ____ polegadas da guia ou borda da estrada.',
+   options:['21.','18.','20.',''],
+   answer:2
+  },
+  {
+   q:'Qual é a primeira regra de uma curva segura e legal?',
+   options:['mude para a faixa apropriada bem antes da curva.','aumente a velocidade.','reduza a velocidade.',''],
+   answer:1
+  },
+  {
+   q:'Você deve usar os faróis altos em todas as seguintes situações, exceto:',
+   options:['em neblina, neve ou chuva intensa.','em áreas de construção.','em estradas desconhecidas à noite ou em ruas escuras da cidade.',''],
+   answer:1
+  },
+  {
+   q:'_________ são os lugares mais prováveis para ocorrerem colisões entre carros e motocicletas.',
+   options:['Rodovias expressas.','Rotatórias.','Interseções.',''],
+   answer:3
+  },
+  {
+   q:'Em uma rodovia com três ou mais faixas em uma direção, veículos ultrapassando outros ou virando à esquerda devem usar:',
+   options:['a faixa da esquerda.','a faixa da direita.','a faixa do meio.',''],
+   answer:1
+  },
+  {
+   q:'Antes de atingir o topo de uma colina ou entrar em uma curva, você deve _________ e observar os veículos que se aproximam.',
+   options:['diminuir a velocidade, mover para o lado direito da estrada.','aumentar a velocidade, ligar os faróis.','diminuir a velocidade, mover para o lado esquerdo da estrada.',''],
+   answer:1
+  },
+  {
+   q:'Quando você deve ligar os faróis altos?',
+   options:['a noite toda.','à noite, quando chove.','ao dirigir em área aberta à noite ou em ruas escuras da cidade.',''],
+   answer:3
+  },
+  {
+   q:'Ao virar à esquerda de uma rua de sentido único para outra rua de sentido único, inicie sua curva a partir de:',
+   options:['a faixa mais à esquerda.','a faixa mais à direita.','qualquer faixa.',''],
+   answer:1
+  },
+  {
+   q:'Se você se aproximar de uma placa de pare estável, você deve:',
+   options:['parar na linha de limite branca sólida.','parar na linha de limite amarela interrompida.','parar na linha de limite branca interrompida.',''],
+   answer:1
+  },
+  {
+   q:'Faixas de Veículos de Alta Ocupação (FAV) são reservadas para:',
+   options:['caronas e veículos com mais de uma pessoa.','veículos agrícolas e caminhões.','caminhões com menos de três pessoas.',''],
+   answer:1
+  },
+  {
+   q:'Seu veículo quebra em uma rodovia. Você não consegue mover o veículo completamente para fora da estrada, pois o acostamento é muito estreito. Qual é a melhor coisa a fazer?',
+   options:['saia pelo lado direito do seu veículo e vá para um local seguro.','fique dentro do seu veículo com o cinto de segurança até a chegada de ajuda.','saia do veículo imediatamente e acene para os motoristas saberem que você está bloqueando a faixa.',''],
+   answer:1
+  },
+  {
+   q:'O que você deve fazer se estiver ultrapassando uma bicicleta e um veículo que se aproxima ao mesmo tempo?',
+   options:['reduza a velocidade e deixe o veículo que se aproxima passar primeiro para deixar espaço extra para a bicicleta.','deixe um pouco de espaço para o veículo que se aproxima ao ultrapassar a bicicleta.','ultrapasse a bicicleta primeiro para deixar espaço extra para o veículo que se aproxima.',''],
+   answer:1
+  },
+  {
+   q:'Você está dirigindo na rodovia e nota outro motorista usando um celular. Qual é a melhor coisa a fazer?',
+   options:['aumentar a distância de seguimento.','buzinar e acenar para o motorista desligar o telefone.','alertar imediatamente a polícia.',''],
+   answer:1
+  },
+  {
+   q:'Se um pneu furar repentinamente enquanto você está dirigindo, você deve:',
+   options:['mover-se para o lado esquerdo da estrada.','segurar firmemente o volante e manter o veículo reto.','aumentar a velocidade.',''],
+   answer:2
+  },
+  {
+   q:'Você está dirigindo lentamente em uma estrada de duas faixas. Se houver pelo menos ____ veículos atrás de você que não conseguem ultrapassar, você deve puxar para o lado e permitir que eles ultrapassem.',
+   options:['4.','3.','5.',''],
+   answer:3
+  },
+  {
+   q:'_________ ocorre em estradas molhadas quando seus pneus dianteiros começam a deslizar na água em vez de na estrada.',
+   options:['Aquaplanagem.','Seguir muito de perto.','Ziguezaguear.',''],
+   answer:1
+  },
+  {
+   q:'Você pode ultrapassar um veículo leve parado pelo lado esquerdo:',
+   options:['se os trilhos estiverem tão próximos do lado direito que você não pode ultrapassar pela direita.','em ruas de sentido único.','em ambas as situações acima.',''],
+   answer:3
+  },
+  {
+   q:'Se você se aproxima de um semáforo amarelo constante, você deve:',
+   options:['parar, procurar pedestres e seguir com cautela.','reduzir a velocidade e seguir com cautela, se não puder parar com segurança.','parar e esperar o sinal vermelho.',''],
+   answer:2
+  },
+  {
+   q:'Ao virar à direita em uma rua de duas mãos, comece na faixa da direita e entre em:',
+   options:['qualquer faixa disponível.','a faixa mais à esquerda.','a faixa mais próxima da borda direita da estrada.',''],
+   answer:3
+  },
+  {
+   q:'Um sinal triangular laranja na traseira de um veículo indica que:',
+   options:['o veículo não pode viajar a mais de 45 mph.','o veículo não pode viajar a mais de 25 mph.','o veículo pode viajar a mais de 25 mph.',''],
+   answer:2
+  },
+  {
+   q:'Se você ver duas linhas amarelas sólidas em uma estrada, isso significa que:',
+   options:['não é permitida ultrapassagem.','a ultrapassagem é permitida a qualquer momento.','a ultrapassagem é permitida durante o dia.',''],
+   answer:1
+  },
+  {
+   q:'Veículos se aproximando de uma rotatória devem:',
+   options:['entrar na rotatória à esquerda da ilha central.','parar completamente e aguardar o tráfego na rotatória limpar.','ceder a passagem ao tráfego na rotatória.',''],
+   answer:3
+  },
+  {
+   q:'Qual das seguintes regras de prioridade de passagem é FALSA?',
+   options:['em todos os momentos, os motoristas devem ceder a passagem a pedestres em uma faixa de pedestres marcada ou não marcada.','você deve obedecer aos sinais dados por um policial de trânsito, mesmo que os sinais do policial contradigam os sinais de trânsito.','em uma interseção onde não há sinal de pare, placa de ceda ou sinal de trânsito, os motoristas devem ceder a passagem aos veículos que vêm da esquerda.',''],
+   answer:3
+  },
+  {
+   q:'Qual destes não é um pedestre:',
+   options:['ciclista.','pessoa com deficiência usando cadeira de rodas.','pessoa cega com uma bengala.',''],
+   answer:1
+  },
+  {
+   q:'Qual das seguintes afirmações sobre pontos cegos é verdadeira?',
+   options:['Eles são eliminados se você tiver um espelho externo em cada lado do veículo.','Caminhões grandes têm pontos cegos maiores do que a maioria dos veículos de passageiros.','Pontos cegos podem ser verificados olhando nos seus retrovisores.',''],
+   answer:2
+  },
+  {
+   q:'Qual destes é considerado uma causa comum de colisão:',
+   options:['velocidade insegura.','não seguir placas de pare, sinais e sinalizações.','todas as anteriores.',''],
+   answer:3
+  },
+  {
+   q:'Uma pessoa condenada por condução imprudente ou participação em uma corrida de velocidade que cause lesões a outra pessoa está sujeita a:',
+   options:['prisão e/ou multa.','serviço comunitário.','todas as opções acima.',''],
+   answer:1
+  },
+  {
+   q:'Você pode legalmente bloquear um cruzamento:',
+   options:['quando você entrou no cruzamento com o sinal verde.','durante o tráfego na hora do rush.','em nenhuma circunstância.',''],
+   answer:3
+  },
+  {
+   q:'Com uma carteira de motorista Classe C, uma pessoa pode dirigir um:',
+   options:['trem leve.','carro, van ou caminhonete.','caminhão semirreboque.',''],
+   answer:2
+  }
+
+ ]
+
+
+  // set questions and options and question number
+  totalQuestionSpan.innerHTML=questions.length;
+  function load(){
+        questionNumberSpan.innerHTML=index+1;
+         question.innerHTML=questions[questionIndex].q;     
+         op1.innerHTML=questions[questionIndex].options[0];
+         op2.innerHTML=questions[questionIndex].options[1];
+         op3.innerHTML=questions[questionIndex].options[2];
+
+         index++;
+  }
+  
+  function check(element){
+   if(element.id==questions[questionIndex].answer){
+    element.classList.add("correct");
+    updateAnswerTracker("correct")
+    score++;
+    console.log("score:"+score)
+   }
+   else{
+    element.classList.add("wrong");
+    updateAnswerTracker("wrong")
+
+   }
+   disabledOptions()
+  }
+   
+  function disabledOptions(){
+     for(let i=0; i<options.length; i++) {
+      options[i].classList.add("disabled");
+      if(options[i].id==questions[questionIndex].answer){
+       options[i].classList.add("correct");
+      }
+
+     }
+  }
+  
+  function enableOptions(){
+     for(let i=0; i<options.length; i++) {
+      options[i].classList.remove("disabled","correct","wrong");
+     }
+  }
+
+  function validate(){
+      if(!options[0].classList.contains("disabled")){
+        alert("Por favor selecione uma alternativa")
+      }
+      else{
+       enableOptions();
+       randomQuestion();
+      }
+  }
+
+  function next(){
+    validate();
+  }
+   
+  function randomQuestion(){
+   let randomNumber=Math.floor(Math.random()*questions.length);
+   let hitDuplicate=0;
+       if(index==questions.length){
+        quizOver();
+       }
+       else{
+         if(myArray.length>0){
+             for(let i=0; i<myArray.length; i++){
+               if(myArray[i]==randomNumber){
+                  hitDuplicate=1;
+                  break;
+               }
+             }
+             if(hitDuplicate==1){
+              randomQuestion();
+             }
+             else{
+               questionIndex=randomNumber;   
+              load();
+              myArr.push(questionIndex);
+             }
+         }
+         if(myArray.length==0){
+           questionIndex=randomNumber;   
+           load();
+           myArr.push(questionIndex);
+         }
+
+       myArray.push(randomNumber);
+       
+      }
+  }
+      
+  function answerTrakcer(){
+     for(let i=0; i<questions.length; i++){
+      const div=document.createElement("div")
+         answerTrackerContainer.appendChild(div);
+     }
+  }
+
+ function updateAnswerTracker(classNam){
+   answerTrackerContainer.children[index-1].classList.add(classNam);
+ }
+
+ function quizOver(){
+    document.querySelector(".quiz-over").classList.add("show");
+    correctAnswerSpan.innerHTML=score;
+    totalQuestionSpan2.innerHTML=questions.length;
+    percentage.innerHTML=(score/questions.length)*100 + "%";
+ }
+ 
+ function tryAgain(){
+     window.location.reload();
+ }
+
+ window.onload=function(){
+  randomQuestion();
+  answerTrakcer();
+ 
+}
+
+</script>
+  
+<style>
+body{
+ margin:0;
+ font-family: sans-serif;
+}
+*{
+ box-sizing: border-box;
+}
+
+.quiz-container{
+ max-width: 700px;
+ min-height:500px;
+ background-color: #ffffff;
+ margin:0px auto;
+ border-radius:10px;
+ padding:0px;
+}
+.quiz-container::after,.quiz-container::before{
+ content: '';
+ clear: both;
+ display: table;
+
+}
+.question-number,
+.question,
+.options,
+.button,
+.answers-tracker{
+ float: left;
+ width: 100%;
+}
+.question-number h3{
+ color:#009688;
+ border-bottom: 1px solid #ccc;
+ margin:0;
+ padding-bottom:10px;
+}
+
+.question {
+ font-size:16px;
+ padding:20px 0;
+ 
+}
+
+.options div{
+  background-color: #cccccc;
+  font-size:14px;
+  margin-bottom:10px;
+  border-radius:5px;
+  padding:15px;
+  position: relative;
+  overflow:hidden;
+  cursor: pointer;
+}
+.options div.disabled{
+ pointer-events: none;
+}
+.options div.correct{
+ z-index: 1;
+ color: #fff;
+}
+.options div.correct::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color: green;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+.options div.wrong{
+ z-index: 1;
+ color: #fff;
+}
+.options div.wrong::before{
+ content: '';
+ position: absolute;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:red;
+ z-index: -1;
+ 
+ animation: animateBackground 1s ease;
+ animation-fill-mode: forwards;
+}
+@keyframes animateBackground{
+ 0%{
+  transform: translateX(-100%);
+ }
+ 100%{
+  transform: translateX(0%); 
+ }
+}
+
+.button .btn{
+ padding:15px 50px;
+ border-radius:5px;
+ cursor: pointer;
+ background-color:#009688;
+ font-size:16px;
+ color:#ffffff;
+ border: none;
+ display: inline-block;
+ margin:15px 0 20px;
+}
+.answers-tracker{
+ border-top:1px solid #ccc;
+ padding-top: 15px;
+}
+.answers-tracker div{
+ height: 13px;
+ width: 13px;
+ background-color: #cccccc;
+ display: inline-block;
+ border-radius: 50%;
+ margin-right:5px;
+}
+
+.answers-tracker div.correct{
+ background-color: green;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+
+}
+.answers-tracker div.wrong{
+ background-color: red;
+
+ background-position: center;
+ background-repeat: no-repeat;
+ background-size: 50%;
+}
+
+.quiz-over{
+ position: fixed;
+ left:0;
+ top:0;
+ width: 100%;
+ height: 100%;
+ background-color:rgba(0,0,0,0.9);
+ z-index: 10;
+ display: none;
+ align-items: center;
+ justify-content: center;
+}
+.quiz-over.show{
+ display: flex;
+}
+.quiz-over .box{
+ background-color: #009688;
+ padding:30px;
+ border-radius:10px;
+ text-align: center;
+ flex-basis: 700px;
+ max-width:700px;
+ color:#ffffff;
+}
+
+.quiz-over .box h1{
+ font-size:36px;
+ margin:0 0 20px;
+}
+
+.quiz-over .box button{
+ padding:15px 50px;
+ border:none;
+ background-color:#FF9800;
+ border-radius:5px;
+ font-size:16px;
+ margin:15px 0 20px;
+ color:#ffffff;
+}
+
+</style>
+     <div class="quizContainer container-fluid well well-lg"></div> 
+        <div class="text-center" id="quiz1">
+        </div>  
+ <div class="quiz-container">
+    <div class="question-number">
+       <h3>Questão <span class="question-num-value"></span> de <span class="total-question"></span></h3>
+       <h4>Para passar no teste você precisa acertar 38 de 46 questões</h4>
+    </div>
+    <div class="question">
+       <script>
+    /** Simple JavaScript Quiz
+     * version 0.1.0
+     * http://journalism.berkeley.edu
+     * created by: Jeremy Rue @jrue
+     *
+     * Copyright (c) 2013 The Regents of the University of California
+     * Released under the GPL Version 2 license
+     * http://www.opensource.org/licenses/gpl-2.0.php
+     * This program is distributed in the hope that it will be useful, but
+     * WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+     */
+
+    var quiztitle = "";
+
+    /**
+    * Set the information about your questions here. The correct answer string needs to match
+    * the correct choice exactly, as it does string matching. (case sensitive)
+    *
+    */
+    var quiz = [
+        {
+            "question"      :   "Este sinal indica?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEivi0UmLRQa8ZsvLEYrA6oW78V-orbeUQlzpngTwYhc48nrsEFy3N_dBqPXV-YpkMNF3iPz5fJAafODkgomb-gDVM6vEwdxRxB6lwz9JypGuPzLQqREkG4r-hjm4akaBpN78mOHccFwlARhE0pS8goUbT8cOur_9trHZz-OrMiJl3TfE49pyN6Cv5a4OPc/s272/placa1.png",
+            "choices"       :   [
+                                    "Uma curva à direita.",
+                                    "Um cruzamento ferroviário.",
+                                    "Um cruzamento de veículos",
+                                    "Reparos na estrada"
+                                ],
+            "correct"       :   "Um cruzamento ferroviário.",
+            "explanation"   :   "Este é um sinal de alerta prévio que pode ser afixado antes do cruzamento ferroviário. Os veículos devem desacelerar, olhar, ouvir e estar preparados para parar no cruzamento à frente.",
+        },
+           {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgWWoL611aFBJvTruh6pBJzBw8616Z5G_BHJRNiF6I-aKp9ojYNMpclnR6JrrC-1e9iQH5XthnZMnXq71lHpiUhbtMT8OfdYnGPYsclJph33-flmGkyRjQ2sq_x5zxpfjfK17wC9WdoA5cyITzkP7MOi0tFlcTMrU7t66s616LyIkPEyXkzFYL54AlEmL8/s442/placa2.jpg",
+            "choices"       :   [
+                                    "Um heliporto",
+                                    "Faixa para véiculos com mais de 1 passageiro",
+                                    "Estacionamento para portadores de deficiência",
+                                    "Um hospital"
+                                ],
+            "correct"       :   "Um hospital",
+            "explanation"   :   "Este é um sinal de serviço. A letra H representa um serviço hospitalar.",
+        },
+           {
+            "question"      :   "O que significam essas setas duplas?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg_K1LWdj1L6r7EGUAA73JeskOtJzAjFJuNLZCK7GwffcDyhibVwYUFZ7XGpWkQw5lrMPoW56X39smDdtzG-Z-IXswqdho4Fvop5IIGUQPuyI0vbdNCHvvfqi4tBK9qNsR8SDNsRgAOadF7MpgZBMxxc85A_a13RPDLN7MBRfBiDdfTImS-V-9nozwD3mM/s329/placa3.gif",
+            "choices"       :   [
+                                    "O tráfego pode fluir em ambos os lados.",
+                                    "O tráfego de mão dupla está à frente.",
+                                    "A rodovia dividida começa.",
+                                    "Termina a rodovia dividida."
+                                ],
+            "correct"       :   "O tráfego pode fluir em ambos os lados.",
+            "explanation"   :   "Este sinal significa que o tráfego na estrada pode fluir em ambos os lados do sinal.",
+        },
+           {
+            "question"      :   "Este sinal indica?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg4GCDrDtWqOqYJVmTIWtw4WaZ687cee0NmMGyRODR84w_6fbUIYxM0QEu1HDMpcyId7fGWfmRYJysVpQUbI9JFYQK8H65PUV8cfRpcifHprwRJlO_P7Rt8ON3KLYK_pdM5HsfXLysH7mE3sluhccjBMjmeJs4b5cIfWMcC_lxh0Wyn2AlDQpMIYe0EKco/s329/placa4.gif",
+            "choices"       :   [
+                                    "Faixas de pedestres em um cruzamento.",
+                                    "Um área de alto fluxo de pedestres.",
+                                    "Uma zona escolar.",
+                                    "Uma parada de ônibus escolar."
+                                ],
+            "correct"       :   "Uma zona escolar.",
+            "explanation"   :   "Esta placa avisa que você está entrando em uma zona escolar. O limite de velocidade em torno de uma escola em funcionamento é de 32 km/h. Diminua a velocidade e proceda com cautela.",
+        },
+        {
+            "question"      :   "Um símbolo de diamante branco na calçada da pista indica que:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiG7wiUFH2jS7Clk2mFys3ZLfAWXjkYzEp5iBNhWnzv95G8SxWqoFlt_qjNIVWhLaSKITWC79u-Tt_JwkpOATbJ39yjK6UCnkmJ8mPTKDnFCE6bzxiZ_51Aly6ETHJPZiFXeSg1BdSD2Uyu5pkZPwX_emQeKfdVFuZF2C0kJvg4qGnjjYpXkzu0Y_NUl74/s371/placa5.png",
+            "choices"       :   [
+                                    "A pista é reservada apenas para veículos de emergência.",
+                                    "A faixa é reservada apenas para ônibus ou veículos de alta ocupação.",
+                                    "A faixa é reservada apenas para ônibus escolares.",
+                                    "A faixa é reservada apenas para pedestres."
+                                ],
+            "correct"       :   "A faixa é reservada apenas para ônibus ou veículos de alta ocupação.",
+            "explanation"   :   "Um símbolo de diamante branco significa que há uma restrição especial de faixa, como somente veículos de alta ocupação (HOV), somente ônibus ou somente bicicletas",
+        },
+        {
+            "question"      :   "Este sinal indica que:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHuL45cJWUKy9TYTAsh3wbG4qEfc8ZjZB6leS1c8w96UnD8mSN0NL0a7_KtifxzbUiDdhvsTW7Gu2JCn-_Kq9VSM7xd6uhKobR3LxYIADmxhLRR0WV3blxrGk87HQM7l7jUnci-TDca_foThHjaD2qwczwVMaCDo3saRo9FX5EjiBj_2Lon-LvVGqMxRc/s450/placa6.jpg",
+            "choices"       :   [
+                                    "Os veículos devem seguir apenas em linha reta ou para a direita.",
+                                    "Os veículos podem circular em uma direção.",
+                                    "Os veículos devem parar no cruzamento à frente.",
+                                    "Veículos não estão autorizados a entrar na estrada."
+                                ],
+            "correct"       :   "Os veículos devem parar no cruzamento à frente.",
+            "explanation"   :   "Este sinal indica que há um sinal de pare à frente. Um sinal de parada significa que você deve parar completamente antes da linha de parada ou faixa de pedestres.",
+        },
+        {
+            "question"      :   "Se você vir este sinal e estiver viajando mais devagar que a maioria do trânsito, você deve:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEic5_cM5_IkfLACJnS5hzTUd9jGqd5YClWoei3CoD8VFn_LfdLu8_xlgS9UWEJ1jXhyHGHAl1pF8cv0priR3EFXhcCJxKfizjfuA69jdlbBIOC69sdNnRIfgSjDhIOCd0p6RDoPUEYYV0hqUK8D17nNAT_86p7XHWYXkWHN_Kmu1reM48EVJyBVQ_gYtww/s287/placa7.png",
+            "choices"       :   [
+                                    "Pegue a próxima saída.",
+                                    "Mude para a faixa da esquerda.",
+                                    "Aumente sua velocidade.",
+                                    "Mude para a faixa da direita."
+                                ],
+            "correct"       :   "Mude para a faixa da direita.",
+            "explanation"   :   "Se você vir este sinal e estiver viajando mais devagar do que a maioria do trânsito, mude para a faixa da direita para que o trânsito mais rápido possa passar por você pela esquerda.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgMC8zQnQSJly8alGocpD9MYINPVFk_fazND1g4oZY_0JkB_MZIsjbZnRv1tkao_flIN6vEewQNpusWw0ge1b4IrKcnAD1rl9fkmvEX1mYD05SrCCcymdCwqvOY42a6miLOpZuxPVqiZ40d-n5c0yM8fpSTVz0RlmclGPpPCmjsvtFiEDClMYrCp4UINpM/s320/placa8.png",
+            "choices"       :   [
+                                    "Sinalizar de bandeira à frente.",
+                                    "Travessia de pedestres.",
+                                    "Pare adiante.",
+                                    "Vire à esquerda em frente."
+                                ],
+            "correct"       :   "Sinalizar de bandeira à frente.",
+            "explanation"   :   "Este sinal de zona de trabalho indica um sinalizador (bandeirador) à frente. Os sinalizadores geralmente estão localizados em zonas de trabalho em rodovias ou ruas. Eles usam coletes, camisas ou jaquetas laranja e usam bandeiras vermelhas ou remos STOP/SLOW para orientar o tráfego com segurança nessas áreas. Você deve seguir as instruções do sinalizador..",
+        },   
+        {
+            "question"      :   "O que este sinal na pista indica?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhPGx9erECDZ9vpofawmky7JZrwfrwx3JV20JK1bPtS1n-Fze_4iSrE8nScMZiG9GzK2Kg3ux96SpiOycFS1Vw4pt4eNbiOWcOSYqUNZY6-6s7z9b_LZxL1dZRAaV4gpoqhP0BBX_sC-SyEpsyQ7gUe5pQwylgXfTk9YjxcWEgZ_87ha2ol-Fe7YTEYdzU/s387/placa9.png",
+            "choices"       :   [
+                                    "O tráfego na faixa da direita deve seguir em frente e o tráfego na segunda faixa deve virar à direita.",
+                                    "O tráfego na faixa da direita deve fluir para a direita e o tráfego na segunda faixa deve seguir em frente ou para a direita.",
+                                    "O tráfego na faixa da direita deve virar à direita e o tráfego na segunda faixa deve seguir em frente ou virar à esquerda.",
+                                    "O tráfego na faixa da direita deve virar à direita e o tráfego na segunda faixa deve seguir em frente ou virar à direita."
+                                ],
+            "correct"       :   "O tráfego na faixa da direita deve virar à direita e o tráfego na segunda faixa deve seguir em frente ou virar à direita.",
+            "explanation"   :   "Este sinal significa que o tráfego na faixa da direita deve virar à direita e o tráfego na segunda faixa deve continuar em frente ou virar à direita.",
+        },
+        {
+            "question"      :   "O que este sinal indica?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi4a2WzockQmxlk5MWuThCNZ3fDdsmuuqK-KCfsI4JGDCtd16SrKAkXUCdQpB2L1521GGIqVMKfqoM64XF5JTfDyF8lBKgzFCYuCGCOtZ6EW0iITq7UKkxqjPa4pRTbUuTsWiKLvUx7k9ddo3Nr4IJq8J-asKWPii9sa8jRzGE9JfWG8RRZUnUs5L8awQE/s426/placa10.png",
+            "choices"       :   [
+                                    "Limite de velocidade à frente",
+                                    "Aviso de velocidade na rotatória",
+                                    "Aviso de velocidade na saída",
+                                    "Distância até a chegada na rotatória"
+                                ],
+            "correct"       :   "Aviso de velocidade na rotatória",
+            "explanation"   :   "Este é um sinal de alerta de velocidade em uma rotatória. O limite de velocidade permitido é de 15 mph na rotatória.",
+        },
+        {
+            "question"      :   "Este sinal indica?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhK-cSv2yTsE1qjwAGW1VIDeKwGMGG_aOit8bGgpc1r19F32lAzppkVYjLAIkH7UKa6yFETveaBVQg1X9HSDLj6Xl1d_GJ5cql0wZWHx-6w2lUvEYoSAmJOvoqcPHNQj1ew1CN2jko4Rln1hjvVyi8S5KY61gmwNGsDFlksWpD0p1T5Hd7e7hzvSAxpFRI/s191/placa11.png",
+            "choices"       :   [
+                                    "Um cruzamento ferroviário fechado.",
+                                    "Uma passagem ferroviária em reparo.",
+                                    "Uma estrada secundária perto de um cruzamento de ferrovia.",
+                                    "Um cruzamento ferroviário com baixa distância ao solo."
+                                ],
+            "correct"       :   "Um cruzamento ferroviário com baixa distância ao solo.",
+            "explanation"   :   "Este sinal indica um cruzamento ferroviário com baixa distância ao solo. A travessia ferroviária é elevada tão alto que um veículo com longa distância entre eixos ou baixa distância ao solo pode ficar preso nos trilhos. Esse tipo de travessia ferroviária normalmente não deve representar um problema para um motorista de carro, a menos que ele esteja puxando um trailer ou dirigindo um trailer com pouca distância ao solo.",
+        },  
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj8fY2kGb1QXlp7VISm313UmJ7sIbS_2L_uV8hLqnYRyygBXrYVMXsaYKh_WsNdbuuPSZeyB-fhJIWD-ruX0V63OFAtAH61tgqaBT0kZxK0weN7GsqZaGiq-QyT7JOCIDalCjn2ItatuyxzHEdjsl1-qtEqBG-GazR4vN4b2LIUPfiU_iOXsM5Wc_9vokc/s387/placa12.png",
+            "choices"       :   [
+                                    "Você deve parar em frente aos trilhos da ferrovia.",
+                                    "Você não deve dirigir nos trilhos da ferrovia.",
+                                    "Você tem permissão para dirigir nos trilhos da ferrovia.",
+                                    "Há um cruzamento ferroviário à frente."
+                                ],
+            "correct"       :   "Você não deve dirigir nos trilhos da ferrovia.",
+            "explanation"   :   "Uma barra vermelha dentro de um círculo vermelho significa não. Este sinal significa que você não tem permissão para dirigir nos trilhos da ferrovia.",
+        },
+        {
+            "question"      :   "O que esse sinal de trânsito significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg-Fyyw61ne0AuPkPgRprBWnZk4M7tYFQu5ItTMEQwMSBiz5yC3Ix9KjkKvcqaFB1kQtB5CdtDGwjqj42jLSZrwg6YN5LjljDZ66imfxmu2ojIgCMlJ4TIUjnPPmLcYtN0bcJEWaP8sELke4mEdQbzjYEAnfMhnn8wdA6LiOZxebQKemViA2YAnpW9DsHc/s322/placa13.png",
+            "choices"       :   [
+                                    "Um hospital à frente",
+                                    "Uma estrada secundária à frente",
+                                    "Um cruzamento de quatro vias à frente",
+                                    "Uma ferrovia cruzando à frente"
+                                ],
+            "correct"       :   "Um cruzamento de quatro vias à frente",
+            "explanation"   :   "Este sinal indica que há um cruzamento de quatro vias à frente. Os motoristas devem estar atentos ao tráfego cruzado que entra na rodovia.",
+        },
+        {
+            "question"      :   "O número visto neste sinal representa:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTpbFKhCYSX4U40S7GkHZVpBy_TKPJrAm_A4ncV3WC57_SEQfdCDVkhLDjNF2hHnbqHYAdAUFg7BSsX8yTKoH_Bpd54JZSipFg0IoJ6QU8jIA6bB4Lmeic1hZH1DY4Hd3gWoVmH7Pwfbyh5CscuLKbjpYgrTRAElHNFijXYezA6WOFEn5Aqo6jHXdjyiw/s698/placa16.png",
+            "choices"       :   [
+                                    "O número de identificação de uma rota dos EUA.",
+                                    "O limite de velocidade na pista de saída.",
+                                    "O número de milhas até chegar a pista de saída.",
+                                    "O número da pista de saída."
+                                ],
+            "correct"       :   "O número da pista de saída.",
+            "explanation"   :   "Este sinal representa um número de saída. Esses sinais direcionam você para ciclovias, áreas de estacionamento, marcos e saídas específicas.",
+        },
+        {
+            "question"      :   "Qual é o significado deste sinal?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgYkuLlzyB8s4-vnUk95jP_iA_F1x04p_P7cLfGcXM2kMiPUNwt-lxoczwj5eH-rabz-GEMaLhyphenhyphenUGJL0mvqI2jMiEL9H0FQTunH5-CJylBT2UkzVwnJM8WX6jTvcB2iwyXTsYiZTg6Yi8qZZwPoX_nJrqXhgAwWW5SZ6vc0lYTYUDCquRIMcAeQ69UJXhc/s320/placa%2017.png",
+            "choices"       :   [
+                                    "A estrada está escorregadia e molhada.",
+                                    "O acostamento da estrada é muito mais baixo que a superfície da estrada.",
+                                    "Há cascalho na estrada.",
+                                    "Cuidado ao fazer a curva."
+                                ],
+            "correct"       :   "O acostamento da estrada é muito mais baixo que a superfície da estrada.",
+            "explanation"   :   "Este sinal indica que o acostamento da estrada está muito mais baixo que a superfície da estrada.",
+        },    
+        {
+            "question"      :   "Este sinal indica que:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEghKmJLLZ1Vfxr_RDulrqyOsHKS6FaHD2gnlMiWoW65FRDEJBqcFp7LF5I1GmZsW6LK7iAByM_LZk1EneYRw4Hy9OSIMGN-DgbzK4-MqYQQI_hf5vs96fDza8XxZVuQgaFChwmJh-Jdfab25JXN_Q0bmQC8Cy1l6gXihe4EnVgGk-EbNBT4WBMj47F5r2Y/s325/placa18.png",
+            "choices"       :   [
+                                    "Não é permitido estacionar.",
+                                    "O estacionamento é permitido apenas para pessoas com deficiência.",
+                                    "A estrada à frente está permanentemente fechada.",
+                                    "Não são permitidas inversões de marcha."
+                                ],
+            "correct"       :   "Não é permitido estacionar.",
+            "explanation"   :   "Este sinal regulamentar é um sinal de Proibido Estacionar. Não é permitido estacionar na sinalização.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiB-GhRl7vljMqxZDYbALdbTo4ZsnMq6lQl4TBzY-pZ7hNFOXCf1xWimXtsjVX8lC2a5mB5TdKUMzmsVvgbyrgPLdSUOmNSOWYnOngIdDnER5ujqIzktRMQzkZlcQul1YJUMp1YPlIU3XTsglM999MXPzdm_xRETAfAKuyPyNyxBEzCrM1L-HoLkVvxmtc/s396/placa19.png",
+            "choices"       :   [
+                                    "Ponte estreita à frente.",
+                                    "Faixa de aceleração à frente",
+                                    "Pavimento estreito à frente.",
+                                    "Obras na pista."
+                                ],
+            "correct"       :   "Ponte estreita à frente.",
+            "explanation"   :   "Este é um sinal de alerta que indica uma ponte estreita à frente. A ponte é larga o suficiente para acomodar duas faixas de tráfego, mas com muito pouco espaço livre.",
+        },
+        {
+            "question"      :   "O que significa esse sinal de trânsito?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6gYvklCe3BX6CcVW3dn9NLt0ip-pGWIgae26xf8UseN4bN9jMaXokxlReVLVxaq-HCEGpcMbkLyP9fd9HCM1sRy8rroxlptJIwhntqDDPpOw7PG0AgsgZARC8VsLP5CDYNz7i4FGW9SPxxgPKDVNIGb-j6U2GjxPWhTDuFyJs4kiWGBzNXIPg0TcaE5M/s357/placa20.png",
+            "choices"       :   [
+                                    "Mostra rotas designadas.",
+                                    "Mostra rotas turísticas.",
+                                    "Mostra rotas alternativas durante fechamentos e obras de estradas.",
+                                    "Marca o caminho para um centro urbano mais próximo."
+                                ],
+            "correct"       :   "Mostra rotas alternativas durante fechamentos e obras de estradas.",
+            "explanation"   :   "Este sinal mostra rotas alternativas durante fechamentos ou obras de estradas. Siga estes sinais.",
+        },
+        {
+            "question"      :   "Esta placa em uma rodovia mostra:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhOs_4qJ4cBTfOZRJbcR66ODgtKxA0oHC9J6kq7XcSaalj9HGLFisggY_JXKEFVEUS3gfVVa2ggyaPgiTDMHwzoVfATh3aUOqIknJacfOJbO7armwSTnIYSuFKGBWY4YGNYpC_MCk9o9F2qZskVV2lIIS4QpG_V5owaxBGtupZlX25qQPYudibQ9LWBueU/s439/placa23.png",
+            "choices"       :   [
+                                    "Uma próxima estrada secundária.",
+                                    "Uma estrada lateral de acesso limitado.",
+                                    "Um cruzamento ferroviário à frente.",
+                                    "Uma próxima parada de três vias."
+                                ],
+            "correct"       :   "Uma próxima estrada secundária.",
+            "explanation"   :   "Esta placa mostra uma estrada secundária à frente. Fique atento aos veículos que entram nessa direção.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiUglbUP7pnQ0Pj7-fhQKqX0WooYR-vRl1JEW7jYtJ7J7jPhTkbbRQ3dWnL_4M9Yfhuymd8ggmexhu0iJDVsjETQ1S-RbnK7pnDUOgU6JR4NXP0NhhLUHC9g4K9KvUyihbRuWWSdkcz03P-tgED053F-Ugtc03fLRDAnmYSbY63rMaHTqO53q3hGZYMTNI/s367/placa24.png",
+            "choices"       :   [
+                                    "As curvas à esquerda são proibidas.",
+                                    "Há uma estrada secundária entrando pela direita.",
+                                    "Há uma série de curvas pela frente.",
+                                    "Há uma curva à esquerda à frente."
+                                ],
+            "correct"       :   "Há uma estrada secundária entrando pela direita.",
+            "explanation"   :   "Esta placa avisa que a estrada principal fará uma curva para a esquerda com uma estrada vicinal entrando pela direita. Aproxime-se deste cruzamento com cuidado extra. Um motorista que se prepara para entrar na estrada principal pela estrada secundária pode não ver você se aproximando na curva e pode parar repentinamente na sua frente.",
+        },
+        {
+            "question"      :   "Este sinal indica que:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHuL45cJWUKy9TYTAsh3wbG4qEfc8ZjZB6leS1c8w96UnD8mSN0NL0a7_KtifxzbUiDdhvsTW7Gu2JCn-_Kq9VSM7xd6uhKobR3LxYIADmxhLRR0WV3blxrGk87HQM7l7jUnci-TDca_foThHjaD2qwczwVMaCDo3saRo9FX5EjiBj_2Lon-LvVGqMxRc/s450/placa6.jpg",
+            "choices"       :   [
+                                    "Os veículos devem seguir apenas em linha reta ou para a direita.",
+                                    "Os veículos podem circular em uma direção.",
+                                    "Os veículos devem parar no cruzamento à frente.",
+                                    "Veículos não estão autorizados a entrar na estrada."
+                                ],
+            "correct"       :   "Os veículos devem parar no cruzamento à frente.",
+            "explanation"   :   "Este sinal indica que há um sinal de pare à frente. Um sinal de parada significa que você deve parar completamente antes da linha de parada ou faixa de pedestres.",
+        },  
+        {
+            "question"      :   "Este sinal pode ser afixado:",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiMkSoWL_xTMD9n35-2S1hudatP47SfD2HQCwA0nkanTzoJi0isRd0PE9E16gkK61OvHevxq0qYNlh9AaLFz0o_oOE3zEEmTBloBSDEXUe3Fh-HiM3eKq1niHlcasYYnx2hxq7aNHgnlkJcWnoee6YYfj3HMlrVH29zWxPwifYkkZstJwqir0sG_bK7NTU/s320/placa26.PNG",
+            "choices"       :   [
+                                    "Nas rotatórias.",
+                                    "Em locais que possuem obras na pista",
+                                    "Em áreas proibidas de estacionar.",
+                                    "Perto de hospitais."
+                                ],
+            "correct"       :   "Em locais que possuem obras na pista",
+            "explanation"   :   "A maioria dos estados dos EUA impõe penalidades adicionais para certas infrações de trânsito em locais que possuem obras na pista sob certas condições, embora as condições e penalidades adicionais variem de um estado para outro. Esta placa informa aos motoristas que as multas por ultrapassar o limite de velocidade são duplicadas.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiOWXQdSqK_vkqtTiNjBml9Ebdu7jdHtXdCjLHAopiasHOyh6e_3YDVMI2eBY0r9btR_HaBPZEtyLuYsSJyFeF6AgLGDaQJ-yQmu8YhTtjFomByln5mUhpFK1snOGRGG5CvIXobgTMErWEXpCNTE0i0Vb5kIfbtY7O8HIDiLfFilLiHZNWsjmmFbQNwyAg/s320/placa27.JPG",
+            "choices"       :   [
+                                    "Caminhões pesados podem entrar na estrada.",
+                                    "Veículos de emergência podem entrar na estrada.",
+                                    "Veículos agrícolas podem entrar na estrada.",
+                                    "Caminhões transportando materiais perigosos podem entrar na estrada."
+                                ],
+            "correct"       :   "Veículos de emergência podem entrar na estrada.",
+            "explanation"   :   "Este é um sinal de alerta de veículo de emergência. Indica que veículos de emergência podem entrar na estrada vindos de quartéis de bombeiros ou outras instalações de emergência. Você deve ceder a um veículo de emergência que se aproxima de qualquer direção quando ele estiver soando uma sirene ou buzina ou exibindo luzes piscando.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj9EvZpoLvGwuzboTCaAMvgOPmZyNw34rVBb324LEva86v-iSyniJlgHdoKwYuJ3UE6a31vQxhfQ2KRLQtmDIPwSZ4Hp83t2EFgbyAhCK_vlccoaNWoj28_lwtY8rRKPemgeGrJfeFJKmcAr7Bg9phm5HBws_pPqfR9Xp_RjKXjrOrvKg_0FdVmM-2bVgo/s343/placa28.JPG",
+            "choices"       :   [
+                                    "Você está se aproximando de uma zona escolar.",
+                                    "Um túnel está à frente.",
+                                    "É proibido parar ou estacionar.",
+                                    "Pegar carona é proibido."
+                                ],
+            "correct"       :   "Pegar carona é proibido.",
+            "explanation"   :   "Na América do Norte, uma mão com o polegar levantado indica que a pessoa quer pegar carona. Uma barra vermelha dentro de um círculo vermelho neste sinal significa que é proibido pegar carona neste trecho da estrada.",
+        },
+        {
+            "question"      :   "O que esse sinal significa?",
+            "image"         :   "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhoG8BniKHbk4wLLyJyKmfmQsIwMlA5FfIXX_fj_DJgm2EMJIK_DS5xDoFCR7gjqiA7EeXTe18mMRmyZ8I8CH_d1qlmgJ9Zwk5fee8tcRM4EMQZzWZpqiRdyDX0dJ2jElv-DjrqyO5MjxKWmytpLwlJWu7zURuk-KeoHTbPe8Pmlov6CPyFlC744CVieN0/s492/placa29.JPG",
+            "choices"       :   [
+                                    "Mantenha-se à esquerda da divisão.",
+                                    "Mantenha-se à direita da divisão.",
+                                    "Você está se aproximando de uma rodovia dividida.",
+                                    "Escolha uma direção para desviar."
+                                ],
+            "correct"       :   "Mantenha-se à esquerda da divisão.",
+            "explanation"   :   "Este sinal indica uma ilha de trânsito ou divisória à frente. Mantenha-se à esquerda deste obstáculo.",
+        },
+             
+      
+        ];
+
+
+    /******* No need to edit below this line *********/
+    var currentquestion = 0, score = 0, submt=true, picked;
+
+    jQuery(document).ready(function($){
+
+        /**
+         * HTML Encoding function for alt tags and attributes to prevent messy
+         * data appearing inside tag attributes.
+         */
+        function htmlEncode(value){
+          return $(document.createElement('div')).text(value).html();
+        }
+
+        /**
+         * This will add the individual choices for each question to the ul#choice-block
+         *
+         * @param {choices} array The choices from each question
+         */
+        function addChoices(choices){
+            if(typeof choices !== "undefined" && $.type(choices) == "array"){
+                $('#choice-block').empty();
+                for(var i=0;i<choices.length; i++){
+                    $(document.createElement('li')).addClass('choice choice-box').attr('data-index', i).text(choices[i]).appendTo('#choice-block');                    
+                }
+            }
+        }
+        
+        /**
+         * Resets all of the fields to prepare for next question
+         */
+        function nextQuestion(){
+            submt = true;
+            $('#explanation').empty();
+            $('#question').text(quiz[currentquestion]['question']);
+            $('#pager').text('Questão ' + Number(currentquestion + 1) + ' de ' + quiz.length);
+            if(quiz[currentquestion].hasOwnProperty('image') && quiz[currentquestion]['image'] != ""){
+                if($('#question-image').length == 0){
+                    $(document.createElement('img')).addClass('question-image').attr('id', 'question-image').attr('src', quiz[currentquestion]['image']).attr('alt', htmlEncode(quiz[currentquestion]['question'])).insertAfter('#question');
+                } else {
+                    $('#question-image').attr('src', quiz[currentquestion]['image']).attr('alt', htmlEncode(quiz[currentquestion]['question']));
+                }
+            } else {
+                $('#question-image').remove();
+            }
+            addChoices(quiz[currentquestion]['choices']);
+            setupButtons();
+        }
+      
+
+        /**
+         * After a selection is submitted, checks if its the right answer
+         *
+         * @param {choice} number The li zero-based index of the choice picked
+         */
+        function processQuestion(choice){
+            if(quiz[currentquestion]['choices'][choice] == quiz[currentquestion]['correct']){
+                $('.choice').eq(choice).css({'background-color':'#50D234'});
+                $('#explanation').html('<strong>Resposta Correta!</strong> ' + htmlEncode(quiz[currentquestion]['explanation']));
+                score++;
+            } else {
+                $('.choice').eq(choice).css({'background-color':'#D92623'});
+                $('#explanation').html('<strong>Resposta Errada.</strong> ' + htmlEncode(quiz[currentquestion]['explanation']));
+            }
+            currentquestion++;
+            $('#submitbutton').html('Próxima Pergunta &raquo;').on('click', function(){
+                if(currentquestion == quiz.length){
+                    endQuiz();
+                } else {
+                    $(this).text('Verificar resposta').css({'color':'#222'}).off('click');
+                    nextQuestion();
+                }
+            })
+        }
+
+        /**
+         * Sets up the event listeners for each button.
+         */
+        function setupButtons(){
+            $('.choice').on('mouseover', function(){
+                $(this).css({'background-color':'#e1e1e1'});
+            });
+            $('.choice').on('mouseout', function(){
+                $(this).css({'background-color':'#fff'});
+            })
+            $('.choice').on('click', function(){
+                picked = $(this).attr('data-index');
+                $('.choice').removeAttr('style').off('mouseout mouseover');
+                $(this).css({'border-color':'#222','font-weight':700,'background-color':'#c1c1c1'});
+                if(submt){
+                    submt=false;
+                    $('#submitbutton').css({'color':'#000'}).on('click', function(){
+                        $('.choice').off('click');
+                        $(this).off('click');
+                        processQuestion(picked);
+                    });
+                }
+            })
+        }
+      
+        
+        /**
+         * Quiz ends, display a message.
+         */
+        function endQuiz(){
+            $('#pager').remove()
+            $('#question-image').remove()
+            $('#explanation').empty();
+            $('#question').empty();
+            $('#choice-block').empty();
+            $('#submitbutton').remove();
+            $('#question').text("Atenção!, Para passar no teste você precisa acertar 80% das questões. Você acertou " + score + " de " + quiz.length + " perguntas. Seu percentual de acerto é:");
+            $(document.createElement('h2')).css({'text-align':'center', 'font-size':'4em'}).text(Math.round(score/quiz.length * 100) + '%').insertAfter('#question');
+        }
+
+        /**
+         * Runs the first time and creates all of the elements for the quiz
+         */
+        function init(){
+            //add title
+            if(typeof quiztitle !== "undefined" && $.type(quiztitle) === "string"){
+                $(document.createElement('h2')).text(quiztitle).appendTo('#frame');
+            } else {
+                $(document.createElement('h4')).text("Quiz").appendTo('#frame');
+            }
+
+            //add pager and questions
+            if(typeof quiz !== "undefined" && $.type(quiz) === "array"){
+                //add pager
+                $(document.createElement('p')).addClass('pager').attr('id','pager').text('Questão 1 de ' + quiz.length).appendTo('#frame');
+                //add first question
+                $(document.createElement('h3')).addClass('question').attr('id', 'question').text(quiz[0]['question']).appendTo('#frame');
+                //add image if present
+                if(quiz[0].hasOwnProperty('image') && quiz[0]['image'] != ""){
+                    $(document.createElement('img')).addClass('question-image').attr('id', 'question-image').attr('src', quiz[0]['image']).attr('alt', htmlEncode(quiz[0]['question'])).appendTo('#frame');
+                }
+                $(document.createElement('p')).addClass('explanation').attr('id','explanation').html('&nbsp;').appendTo('#frame');
+            
+                //questions holder
+                $(document.createElement('ul')).attr('id', 'choice-block').appendTo('#frame');
+            
+                //add choices
+                addChoices(quiz[0]['choices']);
+            
+                //add submit button
+                $(document.createElement('div')).addClass('choice-box').attr('id', 'submitbutton').text('Verificar Resposta').css({'font-weight':50,'color':'#222','padding':'15px 0'}).appendTo('#frame');
+            
+                setupButtons();
+            }
+        }
+        
+        init();
+    });
+    </script>
+    <style type="text/css" media="all">
+        /*css reset */
+        article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block;} 
+        body{line-height:1; font:normal 0.9em/1em Helvetica Neue, Helvetica, "Arial Bold", sans-serif;} 
+        ol,ul{list-style:none;}
+        strong{font-weight:100;}
+        #frame{max-width:620px;width:auto;border:1px solid #ccc;background:#fff;padding:5px;margin:3px;}
+        p.pager{margin:5px 0 5px; font:bold 1em/1em Helvetica Neue, Helvetica, "Arial Bold", sans-serif;color:#999;}
+        img.question-image{display:block;max-width:200px;margin:20px auto;border:1px solid #ccc;width:60%;height:auto;}
+        #choice-block{display:block;list-style:none;margin:0;padding:0;}
+        #submitbutton{background:#84b1a2;}
+        #submitbutton:hover{background:#a8c8bd;}
+        #explanation{margin:0 auto;padding:0px;width:100%;text-align:left;}
+        .choice-box{display:block;text-align:center;margin:8px auto;padding:10px 0;border:1px solid #666;cursor:pointer;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;}
+    </style>
+</head>
+
+       
+<body>
+    <div id="frame" role="content"></div>
+<html>
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-89257DZKKV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-89257DZKKV');
+</script>
+    </div>
+    <div class="options">
+       <div class="option1" id="1" onclick="check(this)"></div>
+       <div class="option2" id="2" onclick="check(this)"></div>
+       <div class="option3" id="3" onclick="check(this)"></div>
+
+    </div>
+    <div class="button">
+       <button class="btn" onclick="next()" type="button">Próxima</button>
+    </div>
+    <div class="answers-tracker">
+       
+    </div>
+ </div>
+ 
+ <div class="quiz-over">
+   <div class="box">
+     <h1>
+      Parabéns!, Você acertou <span class="correct-answers"></span> de <span class="total-question2"></span> questões,
+      sua porcentagem é: <span class="percentage"></span>
+     </h1>
+     <button onclick="tryAgain()" type="button">Tente Novamente</button>
+   </div>
+ </div>
